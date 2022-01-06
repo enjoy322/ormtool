@@ -1,8 +1,8 @@
 package main
 
 import (
-	"convert"
-	"convert/base"
+	"ormtool"
+	"ormtool/base"
 	"time"
 )
 
