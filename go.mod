@@ -1,4 +1,4 @@
-module convert
+module ormtool
 
 go 1.17
 

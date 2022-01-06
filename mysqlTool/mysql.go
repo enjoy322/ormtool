@@ -1,10 +1,10 @@
 package mysqlTool
 
 import (
-	"convert/base"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"ormtool/base"
 	"strings"
 )
 
