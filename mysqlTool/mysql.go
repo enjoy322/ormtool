@@ -1,12 +1,14 @@
-package mysql2
+package mysqlTool
 
 import (
 	"convert/base"
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"strings"
 )
 
+//mysql连接
 func dbConn(c base.MysqlConfig) *sql.DB {
 	conn := strings.Builder{}
 	conn.WriteString(c.User)

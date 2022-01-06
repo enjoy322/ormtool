@@ -1,6 +1,7 @@
-package mysql2
+package mysqlTool
 
-var MysqlToGo = map[string]string{
+// mysql字段类型和golang对应关系
+var mysqlToGo = map[string]string{
 	"int":        "int",
 	"integer":    "int",
 	"tinyint(1)": "bool",

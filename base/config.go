@@ -1,41 +1,38 @@
 package base
 
+//jsonTag类型 1.UserName 2.user_name 3.userName 4.user-name
+
 const (
-	//UserName
 	CodeJsonTag1 = 1 + iota
-	//user_name
 	CodeJsonTag2
-	//userName
 	CodeJsonTag3
-	//user-name
 	CodeJsonTag4
 )
 
-const (
-	CodeDBMySQL = 1 + iota
-	CodeDBMSSQL
-)
+//生成数据库字段信息  1.不生产 2.普通字段信息 3.gorm 4.xorm
 
 const (
-	CodeDBInfoSimple = 1 + iota
+	CodeDBInfoNone = 1 + iota
+	CodeDBInfoSimple
 	CodeDBInfoGorm
 	CodeDBInfoXorm
 )
 
+// Config 配置文件
 type Config struct {
-	DataBaseType int
-	MySQL        MysqlConfig
 	//文件名，默认[数据库].go,使用相对路径
 	SavePath string
 	//Table   []string todo
 	IsGenJsonTag bool
 	//生成在同一个文件中
 	IsGenInOneFile bool
-	//是否生成数据库字段信息
+	//生成数据库字段信息  1.不生产 2.普通字段信息 3.gorm 4.xorm
 	GenDBInfoType int
-	JsonTagType   int
+	//jsonTag类型 1.UserName 2.user_name 3.userName 4.user-name
+	JsonTagType int
 }
 
+// MysqlConfig mysql配置
 type MysqlConfig struct {
 	User     string
 	Password string
