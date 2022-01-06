@@ -2,8 +2,8 @@ package mysqlTool
 
 import (
 	"database/sql"
+	"github.com/enjoy322/ormtool/base"
 	"log"
-	"ormtool/base"
 	"strings"
 )
 

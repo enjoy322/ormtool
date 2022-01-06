@@ -1,9 +1,9 @@
 package ormtool
 
 import (
+	"github.com/enjoy322/ormtool/base"
+	"github.com/enjoy322/ormtool/mysqlTool"
 	"log"
-	"ormtool/base"
-	"ormtool/mysqlTool"
 )
 
 func GenerateMySQL(dbConf base.MysqlConfig, c base.Config) {

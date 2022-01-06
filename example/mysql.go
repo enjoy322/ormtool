@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ormtool"
-	"ormtool/base"
+	"github.com/enjoy322/ormtool"
+	"github.com/enjoy322/ormtool/base"
 	"time"
 )
 

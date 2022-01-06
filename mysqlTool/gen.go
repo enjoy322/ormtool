@@ -2,7 +2,7 @@ package mysqlTool
 
 import (
 	"database/sql"
-	"ormtool/base"
+	"github.com/enjoy322/ormtool/base"
 )
 
 func GenMySQL(my base.MysqlConfig, c base.Config) {

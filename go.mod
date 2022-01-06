@@ -1,4 +1,4 @@
-module ormtool
+module github.com/enjoy322/ormtool
 
 go 1.17
 
