@@ -3,8 +3,8 @@ package mysqlTool
 import (
 	"database/sql"
 	"fmt"
+	"github.com/enjoy322/ormtool/base"
 	_ "github.com/go-sql-driver/mysql"
-	"ormtool/base"
 	"strings"
 )
 
