@@ -8,6 +8,8 @@ var mysqlToGo = map[string]string{
 
 	"tinyint": "int8",
 
+	"json": "[]byte",
+
 	"smallint":           "int16",
 	"mediumint":          "int",
 	"bigint":             "int",
