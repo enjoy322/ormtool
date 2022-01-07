@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 )
 
@@ -60,8 +61,25 @@ func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
 	return
 }
 
+//map排序
+func sortMap(m map[string]string) []map[string]string {
+	data := make([]map[string]string, 0)
+	var ks []string
+	for k, _ := range m {
+		ks = append(ks, k)
+	}
+	sort.Strings(ks)
+	for _, k := range ks {
+		m2 := make(map[string]string)
+		m2[k] = m[k]
+		data = append(data, m2)
+	}
+	return data
+}
+
 // Write 结构体信息写入go文件
 func Write(packageName, fileDir, fileName string, content map[string]string, oneFile bool) {
+	data := sortMap(content)
 	err := os.MkdirAll(fileDir, 0777)
 	if err != nil {
 		panic(err)
@@ -70,8 +88,10 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 		fileName = fileDir + "/" + fileName
 		var s strings.Builder
 		s.WriteString("package " + packageName + Next(1))
-		for _, v := range content {
-			s.WriteString(v)
+		for _, datum := range data {
+			for _, v := range datum {
+				s.WriteString(v)
+			}
 		}
 		writeToFile(fileName, s.String())
 	} else {
