@@ -16,6 +16,7 @@ func Service(DB *sql.DB) *service {
 }
 
 type column struct {
+	ColumnDBName  string
 	ColumnName    string
 	DataType      string
 	ColumnType    string
@@ -64,9 +65,23 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 		}
 		structInfo.WriteString(base.Tab(depth-1) + "}\n\n")
 		// 数据库表名函数
-		structInfo.WriteString("func (" + structName + ") TableName() string {\n")
+		structInfo.WriteString("func (*" + structName + ") TableName() string {\n")
 		structInfo.WriteString("return \"" + tableName + "\"")
 		structInfo.WriteString("\n}\n")
+
+		//数据库表字段
+		structInfo.WriteString("var " + structName + "Col = struct {\n")
+		for _, v := range columns {
+			structInfo.WriteString(v.ColumnName)
+			structInfo.WriteString(base.Tab(depth) + "string\n")
+		}
+		structInfo.WriteString("}{\n")
+		for _, v := range columns {
+			structInfo.WriteString(v.ColumnName)
+			structInfo.WriteString(":\t\"" + strings.ToLower(v.ColumnDBName) + "\"" + ",\n")
+		}
+		structInfo.WriteString("\n}\n")
+
 		data[tableName] = structInfo.String()
 	}
 	return
@@ -139,15 +154,6 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 
 // GetColumn 获取数据库表信息
 func (s service) GetColumn() map[string][]column {
-	/*
-		# SELECT * FROM information_schema.COLUMNS WHERE table_schema = DATABASE();
-		# SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.TABLES WHERE table_schema = DATABASE();
-
-		# SELECT * FROM information_schema.COLUMNS WHERE table_schema = DATABASE();
-
-		show indexes from user_card
-	*/
-	//todo 表约束信息
 	tables := make(map[string][]column)
 	//IS_NULLABLE,COLUMN_DEFAULT,CHARACTER_MAXIMUM_LENGTH
 	sqlStr := "SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME," +
@@ -170,6 +176,7 @@ func (s service) GetColumn() map[string][]column {
 		if err != nil {
 			log.Println(err.Error())
 		}
+		col.ColumnDBName = col.ColumnName
 		tables[col.TableName] = append(tables[col.TableName], col)
 	}
 	return tables
