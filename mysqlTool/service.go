@@ -34,7 +34,9 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 	packageName, fileDir, fileName = base.DealFilePath(c.SavePath, dbName)
 	data = make(map[string]string)
 	for tableName, columns := range tables {
+		createSQL := s.GetCreateSQL(tableName)
 		var structInfo strings.Builder
+
 		structName := tableName
 		if len(structName) == 1 {
 			structName = strings.ToUpper(tableName[0:1])
@@ -46,6 +48,12 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 			}
 			structName = tName.String()
 		}
+
+		// sql
+		structInfo.WriteString("// " + structName + "\n")
+		structInfo.WriteString("/*")
+		structInfo.WriteString(createSQL)
+		structInfo.WriteString("*/\n")
 
 		depth := 1
 		structInfo.WriteString("type " + structName + " struct {\n")
@@ -180,4 +188,33 @@ func (s service) GetColumn() map[string][]column {
 		tables[col.TableName] = append(tables[col.TableName], col)
 	}
 	return tables
+}
+
+type CreateSQL struct {
+	Table string `json:"Table"`
+	SQL   string `json:"Create Table"`
+}
+
+// GetCreateSQL 获取建表语句
+func (s service) GetCreateSQL(tableName string) string {
+	sqlStr := "show create table " + tableName
+	rows, err := s.DB.Query(sqlStr)
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
+	for rows.Next() {
+		var cSql CreateSQL
+		err = rows.Scan(&cSql.Table, &cSql.SQL)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		return cSql.SQL
+	}
+	return ""
 }
