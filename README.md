@@ -3,6 +3,7 @@
 #### 1. 获取方式
 
 ```shell
+github.com/enjoy322/ormtool@v0.0.7
 ```
 
 #### 2. 配置说明
