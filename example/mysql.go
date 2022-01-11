@@ -18,7 +18,7 @@ func main() {
 			SavePath:       "./models/test.go",
 			IsGenJsonTag:   true,
 			IsGenInOneFile: true,
-			GenDBInfoType:  base.CodeDBInfoSimple,
+			GenDBInfoType:  base.CodeDBInfoNone,
 			JsonTagType:    base.CodeJsonTag1})
 	time.Sleep(time.Second)
 }
