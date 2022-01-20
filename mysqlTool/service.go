@@ -150,9 +150,12 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 				cols[i].Tag += "`"
 			}
 			cols[i].ColumnName = base.CamelCase(col.ColumnName)
-			if col.ColumnType == "tinyint(1)" {
+			switch col.ColumnType {
+			case "tinyint(1)":
 				cols[i].ColumnType = "bool"
-			} else {
+			case "int unsigned":
+				cols[i].ColumnType = "uint32"
+			default:
 				cols[i].ColumnType = mysqlToGo[col.DataType]
 			}
 		}

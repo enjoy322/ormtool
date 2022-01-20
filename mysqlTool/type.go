@@ -13,7 +13,7 @@ var mysqlToGo = map[string]string{
 	"smallint":           "int16",
 	"mediumint":          "int",
 	"bigint":             "int",
-	"int unsigned":       "int",
+	"int unsigned":       "uint32",
 	"integer unsigned":   "int",
 	"tinyint unsigned":   "int",
 	"smallint unsigned":  "int",
