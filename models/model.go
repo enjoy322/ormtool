@@ -10,8 +10,6 @@ package models
   `u4` varchar(256) DEFAULT NULL,
   `u5` int DEFAULT NULL,
   `temp` int DEFAULT NULL,
-  `un` int unsigned DEFAULT NULL,
-  `un2` int unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id_uindex` (`id`),
   UNIQUE KEY `user_u3_uindex` (`u3`),
@@ -19,16 +17,14 @@ package models
   KEY `user_u2_index` (`u2`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='用户表'*/
 type User struct {
-	Id         int    `json:"id" `
-	CreateTime int    `json:"create_time" ` // 创建时间
-	UserName   string `json:"user_name" `   // 用户名
-	U2         string `json:"u2" `
-	U3         string `json:"u3" `
-	U4         string `json:"u4" `
-	U5         int    `json:"u5" `
-	Temp       int    `json:"temp" `
-	Un         uint32 `json:"un" `
-	Un2        uint32 `json:"un2" `
+	Id         int    `json:"id" db:"int not null"`
+	CreateTime int    `json:"create_time" db:"int"`                    // 创建时间
+	UserName   string `json:"user_name" db:"varchar(2550) default qw"` // 用户名
+	U2         string `json:"u2" db:"varchar(127)"`
+	U3         string `json:"u3" db:"varchar(255)"`
+	U4         string `json:"u4" db:"varchar(256)"`
+	U5         int    `json:"u5" db:"int"`
+	Temp       int    `json:"temp" db:"int"`
 }
 
 func (*User) TableName() string {
@@ -44,8 +40,6 @@ var UserCol = struct {
 	U4         string
 	U5         string
 	Temp       string
-	Un         string
-	Un2        string
 }{
 	Id:         "id",
 	CreateTime: "create_time",
@@ -55,8 +49,6 @@ var UserCol = struct {
 	U4:         "u4",
 	U5:         "u5",
 	Temp:       "temp",
-	Un:         "un",
-	Un2:        "un2",
 }
 
 // UserCard
@@ -70,11 +62,11 @@ var UserCol = struct {
   UNIQUE KEY `user_card_id_uindex` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci*/
 type UserCard struct {
-	Id       int    `json:"id" `
-	Addr     string `json:"addr" `
-	IsBanned bool   `json:"is_banned" `
-	A3       string `json:"a3" `
-	A4       string `json:"a4" `
+	Id       int    `json:"id" db:"int not null"`
+	Addr     string `json:"addr" db:"varchar(128)"`
+	IsBanned bool   `json:"is_banned" db:"tinyint(1) default 0"`
+	A3       string `json:"a3" db:"char(1)"`
+	A4       string `json:"a4" db:"char(12)"`
 }
 
 func (*UserCard) TableName() string {
@@ -102,7 +94,7 @@ var UserCardCol = struct {
   CONSTRAINT `user_card_detail_user_card_id_fk` FOREIGN KEY (`user_card_id`) REFERENCES `user_card` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci*/
 type UserCardDetail struct {
-	UserCardId int `json:"user_card_id" `
+	UserCardId int `json:"user_card_id" db:"int"`
 }
 
 func (*UserCardDetail) TableName() string {
