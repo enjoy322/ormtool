@@ -120,9 +120,9 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 				cols[i].Tag = "`json:\"" + cols[i].Tag + "\" "
 			}
 			switch c.GenDBInfoType {
-			case base.CodeDBInfoNone:
+			case 1:
 
-			case base.CodeDBInfoSimple:
+			case 2:
 				if !f {
 					cols[i].Tag += "`"
 				}
@@ -137,26 +137,6 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 					cols[i].Tag += " default " + string(col.Default.([]uint8))
 				}
 				cols[i].Tag += "\""
-
-			case base.CodeDBInfoGorm:
-				if !f {
-					cols[i].Tag += "`"
-				}
-				f = true
-				cols[i].Tag += "gorm:\"column:" + col.ColumnName
-				cols[i].Tag += ";type:" + col.ColumnType
-				if col.Default != nil {
-					cols[i].Tag += " default:" + string(col.Default.([]uint8))
-				}
-				var sNull string
-				if col.IsNullable == "NO" {
-					sNull = " not null"
-				}
-				cols[i].Tag += sNull
-				cols[i].Tag += "\""
-
-			case base.CodeDBInfoXorm:
-
 			}
 
 			if f {
