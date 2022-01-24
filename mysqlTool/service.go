@@ -30,11 +30,15 @@ type column struct {
 }
 
 func (s service) StructContent(dbName string, c base.Config) (packageName, fileDir, fileName string, data map[string]string) {
+	tableCommentMap := s.GetTableComment(dbName)
 	tables := s.DealColumn(c)
 	packageName, fileDir, fileName = base.DealFilePath(c.SavePath, dbName)
 	data = make(map[string]string)
 	for tableName, columns := range tables {
-		createSQL := s.GetCreateSQL(tableName)
+		var createSQL string
+		if c.IsGenCreateSQL {
+			createSQL = s.GetCreateSQL(tableName)
+		}
 		var structInfo strings.Builder
 
 		structName := tableName
@@ -49,11 +53,20 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 			structName = tName.String()
 		}
 
-		// sql
-		structInfo.WriteString("// " + structName + "\n")
-		structInfo.WriteString("/*")
-		structInfo.WriteString(createSQL)
-		structInfo.WriteString("*/\n")
+		if v, ok := tableCommentMap[tableName]; ok {
+			if v != "" || c.IsGenCreateSQL {
+				//判断生成表注释
+				structInfo.WriteString("// " + structName + "\t" + v + "\n")
+			}
+		}
+
+		//建表语句
+		if c.IsGenCreateSQL {
+			// sql
+			structInfo.WriteString("/*")
+			structInfo.WriteString(createSQL)
+			structInfo.WriteString("*/\n")
+		}
 
 		depth := 1
 		structInfo.WriteString("type " + structName + " struct {\n")
@@ -220,4 +233,50 @@ func (s service) GetCreateSQL(tableName string) string {
 		return cSql.SQL
 	}
 	return ""
+}
+
+// GetTableComment  获取表信息
+func (s service) GetTableComment(dbName string) map[string]string {
+	sqlStr := "show table status from " + dbName
+	rows, err := s.DB.Query(sqlStr)
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
+	columns, _ := rows.Columns()
+	columnLength := len(columns)
+	cache := make([]interface{}, columnLength) //临时存储每行数据
+	for index, _ := range cache {              //为每一列初始化一个指针
+		var a interface{}
+		cache[index] = &a
+	}
+
+	var list []map[string]interface{} //返回的切片
+	for rows.Next() {
+		err = rows.Scan(cache...)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		item := make(map[string]interface{})
+		for i, data := range cache {
+			item[columns[i]] = *data.(*interface{}) //取实际类型
+		}
+		list = append(list, item)
+	}
+	m := make(map[string]string)
+	for _, i := range list {
+		if v, ok := i["Name"]; ok {
+			tName := string(v.([]uint8))
+			if v, ok := i["Comment"]; ok {
+				comment := string(v.([]uint8))
+				m[tName] = comment
+			}
+		}
+	}
+	return m
 }

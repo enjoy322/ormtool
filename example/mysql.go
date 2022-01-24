@@ -15,10 +15,11 @@ func main() {
 			Port:     "3306",
 			Database: "test"},
 		base.Config{
-			SavePath:       "./models/test.go",
+			SavePath:       "./models/model.go",
 			IsGenJsonTag:   true,
 			IsGenInOneFile: true,
 			GenDBInfoType:  base.CodeDBInfoNone,
-			JsonTagType:    base.CodeJsonTag1})
+			JsonTagType:    base.CodeJsonTag1,
+			IsGenCreateSQL: false})
 	time.Sleep(time.Second)
 }

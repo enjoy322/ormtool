@@ -30,6 +30,8 @@ type Config struct {
 	GenDBInfoType int
 	//jsonTag类型 1.UserName 2.user_name 3.userName 4.user-name
 	JsonTagType int
+	//	是否生成建表语句
+	IsGenCreateSQL bool
 }
 
 // MysqlConfig mysql配置
