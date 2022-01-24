@@ -1,23 +1,5 @@
 package base
 
-//jsonTag类型 1.UserName 2.user_name 3.userName 4.user-name
-
-const (
-	CodeJsonTag1 = 1 + iota
-	CodeJsonTag2
-	CodeJsonTag3
-	CodeJsonTag4
-)
-
-//生成数据库字段信息  1.不生产 2.普通字段信息 3.gorm 4.xorm
-
-const (
-	CodeDBInfoNone = 1 + iota
-	CodeDBInfoSimple
-	CodeDBInfoGorm
-	CodeDBInfoXorm
-)
-
 // Config 配置文件
 type Config struct {
 	//文件名，默认[数据库].go,使用相对路径
