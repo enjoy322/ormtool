@@ -3,7 +3,7 @@
 #### 1. 获取方式
 
 ```shell
-go get github.com/enjoy322/ormtool@v0.1.0
+go get github.com/enjoy322/ormtool@v1.0.0
 ```
 
 #### 2. 配置说明
