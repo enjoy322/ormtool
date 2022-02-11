@@ -3,10 +3,11 @@
 #### 1. 获取方式
 
 ```shell
-go get github.com/enjoy322/ormtool@v0.0.9
+go get github.com/enjoy322/ormtool@v0.1.0
 ```
 
 #### 2. 配置说明
+说明：数据库字段需为小写下划线
 
 ```shell
 # 保存路径
