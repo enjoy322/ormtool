@@ -17,7 +17,7 @@ IsGenJsonTag:   true,
 IsGenInOneFile: true,
 # 1：不生成数据库基本信息 2：生成简单的数据库字段信息
 GenDBInfoType: 2,
-# json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.user_name 3.userName 4.user-name
+# json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.userName 3.user_name 4.user-name
 JsonTagType:    1,
 # 是否生成建表语句
 IsGenCreateSQL: true
