@@ -3,10 +3,11 @@
 #### 1. 获取方式
 
 ```shell
-go get github.com/enjoy322/ormtool@v0.0.9
+go get github.com/enjoy322/ormtool@v1.0.0
 ```
 
 #### 2. 配置说明
+说明：数据库字段需为小写下划线
 
 ```shell
 # 保存路径
@@ -17,7 +18,7 @@ IsGenJsonTag:   true,
 IsGenInOneFile: true,
 # 1：不生成数据库基本信息 2：生成简单的数据库字段信息
 GenDBInfoType: 2,
-# json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.user_name 3.userName 4.user-name
+# json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.userName 3.user_name 4.user-name
 JsonTagType:    1,
 # 是否生成建表语句
 IsGenCreateSQL: true
