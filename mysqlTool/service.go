@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/enjoy322/ormtool/base"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -29,30 +30,36 @@ type column struct {
 	Tag           string
 }
 
+// StructContent 结构体信息
 func (s service) StructContent(dbName string, c base.Config) (packageName, fileDir, fileName string, data map[string]string) {
+	// 查询表的注释
 	tableCommentMap := s.GetTableComment(dbName)
+	// 查询数据库的所有表
 	tables := s.DealColumn(c)
 	packageName, fileDir, fileName = base.DealFilePath(c.SavePath, dbName)
 	data = make(map[string]string)
 	for tableName, columns := range tables {
 		var createSQL string
 		if c.IsGenCreateSQL {
+			// 需要建表SQL语句
 			createSQL = s.GetCreateSQL(tableName)
 		}
-		var structInfo strings.Builder
 
+		var structInfo strings.Builder
+		// 结构体名称
 		structName := tableName
 		if len(structName) == 1 {
-			structName = strings.ToUpper(tableName[0:1])
+			structName = strings.ToUpper(tableName[:1])
 		} else {
 			split := strings.Split(tableName, "_")
 			var tName strings.Builder
 			for _, str := range split {
-				tName.WriteString(strings.ToUpper(str[0:1]) + str[1:])
+				tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
 			}
 			structName = tName.String()
 		}
 
+		// 结构体名称后加注释（如果表存在注释情况下
 		if v, ok := tableCommentMap[tableName]; ok {
 			if v != "" || c.IsGenCreateSQL {
 				//判断生成表注释
@@ -60,41 +67,40 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 			}
 		}
 
-		//建表语句
+		//添加建表SQL语句
 		if c.IsGenCreateSQL {
-			// sql
 			structInfo.WriteString("/*")
 			structInfo.WriteString(createSQL)
 			structInfo.WriteString("*/\n")
 		}
 
-		depth := 1
+		// 结构体字段
 		structInfo.WriteString("type " + structName + " struct {\n")
 		for _, v := range columns {
-			structInfo.WriteString(base.Tab(depth))
+			structInfo.WriteString("\t")
 			structInfo.WriteString(v.ColumnName)
-			structInfo.WriteString(base.Tab(depth))
+			structInfo.WriteString("\t")
 			structInfo.WriteString(v.ColumnType)
-			structInfo.WriteString(base.Tab(depth))
+			structInfo.WriteString("\t")
 			structInfo.WriteString(v.Tag)
-			structInfo.WriteString(base.Tab(depth))
+			structInfo.WriteString("\t")
 			if v.ColumnComment != "" {
 				structInfo.WriteString(" // ")
 				structInfo.WriteString(v.ColumnComment)
 			}
-			structInfo.WriteString(base.Next(1))
+			structInfo.WriteString("\n")
 		}
-		structInfo.WriteString(base.Tab(depth-1) + "}\n\n")
+		structInfo.WriteString("}\n\n")
 		// 数据库表名函数
 		structInfo.WriteString("func (*" + structName + ") TableName() string {\n")
 		structInfo.WriteString("return \"" + tableName + "\"")
 		structInfo.WriteString("\n}\n")
 
-		//数据库表字段
+		//结构体字段与表字段对应
 		structInfo.WriteString("var " + structName + "Col = struct {\n")
 		for _, v := range columns {
 			structInfo.WriteString(v.ColumnName)
-			structInfo.WriteString(base.Tab(depth) + "string\n")
+			structInfo.WriteString("\t" + "string\n")
 		}
 		structInfo.WriteString("}{\n")
 		for _, v := range columns {
@@ -108,45 +114,7 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 	return
 }
 
-func jsonTag(jsonType int, origin string) string {
-	switch jsonType {
-	//1.UserName 2.userName 3.user_name 4.user-name
-	case 1:
-		return Case2Camel(origin)
-	case 2:
-		s1 := Case2Camel(origin)
-		return strings.ToLower(s1[:1]) + s1[1:]
-	case 3:
-		return strings.ToLower(origin)
-	case 4:
-		return strings.Replace(origin, "_", "-", -1)
-
-	}
-	panic("json tag 参数错误")
-}
-
-func Case2Camel(name string) string {
-	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
-	return strings.Replace(name, " ", "", -1)
-}
-
-//// 首字母大写
-//func Ucfirst(str string) string {
-//	for i, v := range str {
-//		return string(unicode.ToUpper(v)) + str[i+1:]
-//	}
-//	return ""
-//}
-//
-//// 首字母小写
-//func Lcfirst(str string) string {
-//	for i, v := range str {
-//		return string(unicode.ToLower(v)) + str[i+1:]
-//	}
-//	return ""
-//}
-
+// DealColumn 处理结构体字段 生成的tag信息
 func (s service) DealColumn(c base.Config) map[string][]column {
 	tables := s.GetColumn()
 	for _, cols := range tables {
@@ -181,17 +149,77 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 				cols[i].Tag += "`"
 			}
 			cols[i].ColumnName = base.CamelCase(col.ColumnName)
-			switch col.ColumnType {
-			case "tinyint(1)":
-				cols[i].ColumnType = "bool"
-			case "int unsigned":
-				cols[i].ColumnType = "uint32"
-			default:
-				cols[i].ColumnType = mysqlToGo[col.DataType]
-			}
+			//switch col.ColumnType {
+			//case "tinyint(1)":
+			//	cols[i].ColumnType = "bool"
+			//case "int unsigned":
+			//	cols[i].ColumnType = "uint32"
+			//default:
+			//	cols[i].ColumnType = mysqlToGo[col.DataType]
+			//}
+			cols[i].ColumnType = dealType(col.DataType, col.ColumnType)
 		}
 	}
 	return tables
+}
+
+func dealType(typeSimple, typeDetail string) string {
+	switch typeSimple {
+	case "tinyint":
+		num := getTypeNum(typeDetail)
+		switch num {
+		case 0:
+			//tinyint(0) 对应char(1)
+			return "string"
+		case 1:
+			return "bool"
+		}
+	case "int":
+		return mysqlToGo[typeDetail]
+	default:
+		return mysqlToGo[typeSimple]
+	}
+	return ""
+}
+
+// 获取表字段长度约束
+func getTypeNum(typeStr string) int {
+	f := strings.HasSuffix(typeStr, ")")
+	if f {
+		//	有长度约束
+		splitAfter := strings.SplitAfter(typeStr, "(")
+		n := splitAfter[1][:1]
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		return i
+	}
+	return 0
+}
+
+// 处理tag： json
+func jsonTag(jsonType int, origin string) string {
+	switch jsonType {
+	//1.UserName 2.userName 3.user_name 4.user-name
+	case 1:
+		return Case2Camel(origin)
+	case 2:
+		s1 := Case2Camel(origin)
+		return strings.ToLower(s1[:1]) + s1[1:]
+	case 3:
+		return strings.ToLower(origin)
+	case 4:
+		return strings.Replace(origin, "_", "-", -1)
+
+	}
+	panic("json tag 参数错误")
+}
+
+func Case2Camel(name string) string {
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	return strings.Replace(name, " ", "", -1)
 }
 
 // GetColumn 获取数据库表信息
