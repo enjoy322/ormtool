@@ -14,6 +14,8 @@ type Config struct {
 	JsonTagType int
 	//	是否生成建表语句
 	IsGenCreateSQL bool
+	//	CustomType
+	CustomType map[string]string
 }
 
 // MysqlConfig mysql配置
