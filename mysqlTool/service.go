@@ -157,13 +157,16 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 			//default:
 			//	cols[i].ColumnType = mysqlToGo[col.DataType]
 			//}
-			cols[i].ColumnType = dealType(col.DataType, col.ColumnType)
+			cols[i].ColumnType = dealType(c, col.DataType, col.ColumnType)
 		}
 	}
 	return tables
 }
 
-func dealType(typeSimple, typeDetail string) string {
+func dealType(c base.Config, typeSimple, typeDetail string) string {
+	if v, ok := c.CustomType[typeDetail]; ok {
+		return v
+	}
 	switch typeSimple {
 	case "tinyint":
 		num := getTypeNum(typeDetail)
