@@ -108,16 +108,54 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 	return
 }
 
+func jsonTag(jsonType int, origin string) string {
+	switch jsonType {
+	//1.UserName 2.userName 3.user_name 4.user-name
+	case 1:
+		return Case2Camel(origin)
+	case 2:
+		s1 := Case2Camel(origin)
+		return strings.ToLower(s1[:1]) + s1[1:]
+	case 3:
+		return strings.ToLower(origin)
+	case 4:
+		return strings.Replace(origin, "_", "-", -1)
+
+	}
+	panic("json tag 参数错误")
+}
+
+func Case2Camel(name string) string {
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	return strings.Replace(name, " ", "", -1)
+}
+
+//// 首字母大写
+//func Ucfirst(str string) string {
+//	for i, v := range str {
+//		return string(unicode.ToUpper(v)) + str[i+1:]
+//	}
+//	return ""
+//}
+//
+//// 首字母小写
+//func Lcfirst(str string) string {
+//	for i, v := range str {
+//		return string(unicode.ToLower(v)) + str[i+1:]
+//	}
+//	return ""
+//}
+
 func (s service) DealColumn(c base.Config) map[string][]column {
 	tables := s.GetColumn()
 	for _, cols := range tables {
 		for i, col := range cols {
 			var f bool
 			if c.IsGenJsonTag {
+				//生成 json tag
 				f = true
-				cols[i].Tag = col.ColumnName
-				cols[i].Tag = strings.ToLower(cols[i].Tag)
-				cols[i].Tag = "`json:\"" + cols[i].Tag + "\" "
+				cols[i].Tag = "`json:\"" + jsonTag(c.JsonTagType, col.ColumnName) + "\" "
 			}
 			switch c.GenDBInfoType {
 			case 1:
