@@ -23,6 +23,6 @@ func main() {
 			// json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.user_name 3.userName 4.user-name
 			JsonTagType: 3,
 			// 是否生成建表语句
-			IsGenCreateSQL: false})
+			IsGenCreateSQL: true})
 	time.Sleep(time.Second)
 }

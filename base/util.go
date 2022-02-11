@@ -25,16 +25,6 @@ func CamelCase(str string) string {
 	return text
 }
 
-// Next 换行
-func Next(depth int) string {
-	return strings.Repeat("\n", depth)
-}
-
-// Tab 缩进
-func Tab(depth int) string {
-	return strings.Repeat("\t", depth)
-}
-
 // DealFilePath 处理保存路径，包名和文件名
 func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
 	if !strings.HasSuffix(s, ".go") {
@@ -87,7 +77,7 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 	if oneFile {
 		fileName = fileDir + "/" + fileName
 		var s strings.Builder
-		s.WriteString("package " + packageName + Next(1))
+		s.WriteString("package " + packageName + "\n")
 		for _, datum := range data {
 			for _, v := range datum {
 				s.WriteString(v)
@@ -98,7 +88,7 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 		for k, v := range content {
 			fileName = fileDir + "/" + k + ".go"
 			var s strings.Builder
-			s.WriteString("package " + packageName + Next(1))
+			s.WriteString("package " + packageName + "\n")
 			s.WriteString(v)
 			writeToFile(fileName, s.String())
 		}
