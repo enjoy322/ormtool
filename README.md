@@ -3,10 +3,11 @@
 #### 1. 获取方式
 
 ```shell
-go get github.com/enjoy322/ormtool@v1.0.0
+go get github.com/enjoy322/ormtool@v1.1.0
 ```
 
 #### 2. 配置说明
+
 说明：数据库字段需为小写下划线
 
 ```shell
@@ -22,6 +23,14 @@ GenDBInfoType: 2,
 JsonTagType:    1,
 # 是否生成建表语句
 IsGenCreateSQL: true
+# 自定义对应类型，优先选择;map类型,key对应表字段类型,value对应Golang生成类型
+CustomType: 
+```
+> 自定义类型，如下
+```go
+map[string]string{ "int": "int", 
+	"int unsigned": "uint32",
+	"tinyint(1)":   "bool",}
 ```
 
 ---

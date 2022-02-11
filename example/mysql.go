@@ -23,6 +23,13 @@ func main() {
 			// json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.user_name 3.userName 4.user-name
 			JsonTagType: 3,
 			// 是否生成建表语句
-			IsGenCreateSQL: true})
+			IsGenCreateSQL: true,
+			// 自定义对应类型，优先选择
+			CustomType: map[string]string{
+				"int":          "int",
+				"int unsigned": "uint32",
+				"tinyint(1)":   "bool",
+			},
+		})
 	time.Sleep(time.Second)
 }
