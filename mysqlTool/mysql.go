@@ -2,9 +2,9 @@ package mysqlTool
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/enjoy322/ormtool/base"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"strings"
 )
 
@@ -23,12 +23,12 @@ func dbConn(c base.MysqlConfig) *sql.DB {
 	conn.WriteString("?parseTime=true")
 	db, err := sql.Open("mysql", conn.String())
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	fmt.Println("MySQL connected")
+	log.Println("MySQL connected")
 	return db
 }

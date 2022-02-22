@@ -2,19 +2,19 @@ package base
 
 // Config 配置文件
 type Config struct {
-	//文件名，默认[数据库].go,使用相对路径
+	// 生成文件名，默认[数据库].go,使用相对路径
 	SavePath string
-	//Table   []string todo
+	// 生成json tag
 	IsGenJsonTag bool
-	//生成在同一个文件中
+	// 生成在同一个文件中
 	IsGenInOneFile bool
-	//生成数据库字段信息  1.不生产 2.普通字段信息 3.gorm 4.xorm
+	// 生成数据库字段信息  1.不生产 2.普通字段信息
 	GenDBInfoType int
-	//jsonTag类型 1.UserName 2.user_name 3.userName 4.user-name
+	// jsonTag类型 1.UserName 2.userName 3.user_name 4.user-name
 	JsonTagType int
 	//	是否生成建表语句
 	IsGenCreateSQL bool
-	//	CustomType
+	//	自定义数据库和Go类型对应关系
 	CustomType map[string]string
 }
 

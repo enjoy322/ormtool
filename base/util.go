@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +24,12 @@ func CamelCase(str string) string {
 		}
 	}
 	return text
+}
+
+func Case2Camel(name string) string {
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	return strings.Replace(name, " ", "", -1)
 }
 
 // DealFilePath 处理保存路径，包名和文件名
@@ -72,7 +79,7 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 	data := sortMap(content)
 	err := os.MkdirAll(fileDir, 0777)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	if oneFile {
 		fileName = fileDir + "/" + fileName
@@ -99,17 +106,17 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 func writeToFile(fileName, content string) {
 	f, err := os.Create(fileName)
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Fatalln(err)
 	}
 	defer func(f *os.File) {
 		err := f.Close()
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 	}(f)
 	_, err = f.WriteString(content)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	goFormat(fileName)
 }
@@ -119,6 +126,40 @@ func goFormat(fileName string) {
 	cmd := exec.Command("gofmt", "-w", fileName)
 	err := cmd.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
+}
+
+// JsonTag 处理tag： json
+func JsonTag(jsonType int, origin string) string {
+	switch jsonType {
+	//1.UserName 2.userName 3.user_name 4.user-name
+	case 1:
+		return Case2Camel(origin)
+	case 2:
+		s1 := Case2Camel(origin)
+		return strings.ToLower(s1[:1]) + s1[1:]
+	case 3:
+		return strings.ToLower(origin)
+	case 4:
+		return strings.Replace(origin, "_", "-", -1)
+
+	}
+	panic("json tag 参数错误")
+}
+
+// GetTypeNum 获取表字段长度约束
+func GetTypeNum(typeStr string) int {
+	f := strings.HasSuffix(typeStr, ")")
+	if f {
+		//	有长度约束
+		splitAfter := strings.SplitAfter(typeStr, "(")
+		n := splitAfter[1][:1]
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		return i
+	}
+	return 0
 }
