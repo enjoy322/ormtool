@@ -24,5 +24,6 @@ type MysqlConfig struct {
 	Password string
 	Host     string
 	Port     string
+	// 数据库名称
 	Database string
 }

@@ -2,13 +2,10 @@ package mysqlTool
 
 // mysql字段类型和golang对应关系
 var mysqlToGo = map[string]string{
-	"int":     "int",
-	"integer": "int",
-
-	"tinyint": "int8",
-
-	"json": "[]byte",
-
+	"int":                "int",
+	"integer":            "int",
+	"tinyint":            "int8",
+	"json":               "[]byte",
 	"smallint":           "int16",
 	"mediumint":          "int",
 	"bigint":             "int",

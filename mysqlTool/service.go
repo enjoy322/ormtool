@@ -17,12 +17,18 @@ func Service(DB *sql.DB) *service {
 }
 
 type column struct {
-	ColumnDBName  string
-	ColumnName    string
-	DataType      string
-	ColumnType    string
-	Default       interface{}
-	TableName     string
+	ColumnDBName string
+	//列名
+	ColumnName string
+	//字段类型，如varchar
+	DataType string
+	//字段类型，显示细节，如varchar(32)
+	ColumnType string
+	//默认值
+	Default interface{}
+	//表名
+	TableName string
+	//字段注释
 	ColumnComment string
 	Length        interface{}
 	IsNullable    string
@@ -32,7 +38,7 @@ type column struct {
 
 // StructContent 结构体信息
 func (s service) StructContent(dbName string, c base.Config) (packageName, fileDir, fileName string, data map[string]string) {
-	// 查询表的注释
+	// 查询表名注释
 	tableCommentMap := s.GetTableComment(dbName)
 	// 查询数据库的所有表
 	tables := s.DealColumn(c)
@@ -45,6 +51,7 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 			createSQL = s.GetCreateSQL(tableName)
 		}
 
+		// 表（结构体内容）
 		var structInfo strings.Builder
 		// 结构体名称
 		structName := tableName
@@ -149,14 +156,6 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 				cols[i].Tag += "`"
 			}
 			cols[i].ColumnName = base.CamelCase(col.ColumnName)
-			//switch col.ColumnType {
-			//case "tinyint(1)":
-			//	cols[i].ColumnType = "bool"
-			//case "int unsigned":
-			//	cols[i].ColumnType = "uint32"
-			//default:
-			//	cols[i].ColumnType = mysqlToGo[col.DataType]
-			//}
 			cols[i].ColumnType = dealType(c, col.DataType, col.ColumnType)
 		}
 	}
@@ -172,7 +171,6 @@ func dealType(c base.Config, typeSimple, typeDetail string) string {
 		num := getTypeNum(typeDetail)
 		switch num {
 		case 0:
-			//tinyint(0) 对应char(1)
 			return "string"
 		case 1:
 			return "bool"
