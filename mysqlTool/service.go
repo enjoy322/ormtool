@@ -4,10 +4,19 @@ import (
 	"database/sql"
 	"github.com/enjoy322/ormtool/base"
 	"log"
-	"strconv"
 	"strings"
 )
 
+type Method interface {
+	// GetTableComment 查询表注释
+	GetTableComment(dbName string) map[string]string
+	// GetCreateSQL 获取建表语句
+	GetCreateSQL(tableName string) string
+	// GetColumn 获取数据库表信息
+	GetColumn() map[string][]column
+	// DealColumn 处理结构体字段 生成的tag信息
+	DealColumn(c base.Config) map[string][]column
+}
 type service struct {
 	*sql.DB
 }
@@ -42,7 +51,9 @@ func (s service) StructContent(dbName string, c base.Config) (packageName, fileD
 	tableCommentMap := s.GetTableComment(dbName)
 	// 查询数据库的所有表
 	tables := s.DealColumn(c)
+	// 处理保存路径名称
 	packageName, fileDir, fileName = base.DealFilePath(c.SavePath, dbName)
+
 	data = make(map[string]string)
 	for tableName, columns := range tables {
 		var createSQL string
@@ -130,7 +141,7 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 			if c.IsGenJsonTag {
 				//生成 json tag
 				f = true
-				cols[i].Tag = "`json:\"" + jsonTag(c.JsonTagType, col.ColumnName) + "\" "
+				cols[i].Tag = "`json:\"" + base.JsonTag(c.JsonTagType, col.ColumnName) + "\" "
 			}
 			switch c.GenDBInfoType {
 			case 1:
@@ -168,7 +179,7 @@ func dealType(c base.Config, typeSimple, typeDetail string) string {
 	}
 	switch typeSimple {
 	case "tinyint":
-		num := getTypeNum(typeDetail)
+		num := base.GetTypeNum(typeDetail)
 		switch num {
 		case 0:
 			return "string"
@@ -183,46 +194,6 @@ func dealType(c base.Config, typeSimple, typeDetail string) string {
 	return ""
 }
 
-// 获取表字段长度约束
-func getTypeNum(typeStr string) int {
-	f := strings.HasSuffix(typeStr, ")")
-	if f {
-		//	有长度约束
-		splitAfter := strings.SplitAfter(typeStr, "(")
-		n := splitAfter[1][:1]
-		i, err := strconv.Atoi(n)
-		if err != nil {
-			panic(err)
-		}
-		return i
-	}
-	return 0
-}
-
-// 处理tag： json
-func jsonTag(jsonType int, origin string) string {
-	switch jsonType {
-	//1.UserName 2.userName 3.user_name 4.user-name
-	case 1:
-		return Case2Camel(origin)
-	case 2:
-		s1 := Case2Camel(origin)
-		return strings.ToLower(s1[:1]) + s1[1:]
-	case 3:
-		return strings.ToLower(origin)
-	case 4:
-		return strings.Replace(origin, "_", "-", -1)
-
-	}
-	panic("json tag 参数错误")
-}
-
-func Case2Camel(name string) string {
-	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
-	return strings.Replace(name, " ", "", -1)
-}
-
 // GetColumn 获取数据库表信息
 func (s service) GetColumn() map[string][]column {
 	tables := make(map[string][]column)
@@ -232,7 +203,7 @@ func (s service) GetColumn() map[string][]column {
 		" FROM information_schema.COLUMNS WHERE table_schema = DATABASE()"
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Fatalln(err.Error())
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -245,7 +216,7 @@ func (s service) GetColumn() map[string][]column {
 		err = rows.Scan(&col.ColumnName, &col.DataType, &col.ColumnType, &col.Default,
 			&col.TableName, &col.ColumnComment, &col.Length, &col.IsNullable, &col.ColumnKey)
 		if err != nil {
-			log.Println(err.Error())
+			log.Fatalln(err.Error())
 		}
 		col.ColumnDBName = col.ColumnName
 		tables[col.TableName] = append(tables[col.TableName], col)
@@ -253,17 +224,12 @@ func (s service) GetColumn() map[string][]column {
 	return tables
 }
 
-type CreateSQL struct {
-	Table string `json:"Table"`
-	SQL   string `json:"Create Table"`
-}
-
 // GetCreateSQL 获取建表语句
 func (s service) GetCreateSQL(tableName string) string {
 	sqlStr := "show create table " + tableName
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Fatalln(err.Error())
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -271,23 +237,29 @@ func (s service) GetCreateSQL(tableName string) string {
 
 		}
 	}(rows)
+
+	type CreateSQL struct {
+		Table string `json:"Table"`
+		SQL   string `json:"Create Table"`
+	}
+
 	for rows.Next() {
 		var cSql CreateSQL
 		err = rows.Scan(&cSql.Table, &cSql.SQL)
 		if err != nil {
-			log.Println(err.Error())
+			log.Fatalln(err.Error())
 		}
 		return cSql.SQL
 	}
 	return ""
 }
 
-// GetTableComment  获取表信息
+// GetTableComment  获取表注释信息
 func (s service) GetTableComment(dbName string) map[string]string {
 	sqlStr := "show table status from " + dbName
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Fatalln(err.Error())
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -307,7 +279,7 @@ func (s service) GetTableComment(dbName string) map[string]string {
 	for rows.Next() {
 		err = rows.Scan(cache...)
 		if err != nil {
-			log.Println(err.Error())
+			log.Fatalln(err.Error())
 		}
 		item := make(map[string]interface{})
 		for i, data := range cache {
