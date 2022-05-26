@@ -81,6 +81,7 @@ func Write(packageName, fileDir, fileName string, content map[string]string, one
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	if oneFile {
 		fileName = fileDir + "/" + fileName
 		var s strings.Builder
@@ -120,6 +121,9 @@ func writeToFile(fileName, content string) {
 	}
 	goFormat(fileName)
 }
+
+// todo
+// imports
 
 //格式化
 func goFormat(fileName string) {

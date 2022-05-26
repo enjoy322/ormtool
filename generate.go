@@ -1,13 +1,14 @@
 package ormtool
 
 import (
+	"log"
+
 	"github.com/enjoy322/ormtool/base"
 	"github.com/enjoy322/ormtool/mysqlTool"
-	"log"
 )
 
 func GenerateMySQL(dbConf base.MysqlConfig, c base.Config) {
-	log.Println("-----generate-----")
+	log.Println("-----ormtool generating-----")
 	mysqlTool.GenMySQL(dbConf, c)
-	log.Println("-----finish-----")
+	log.Println("-----ormtool done-----")
 }
