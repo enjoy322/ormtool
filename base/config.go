@@ -27,3 +27,17 @@ type MysqlConfig struct {
 	// 数据库名称
 	Database string
 }
+
+type StructInfo struct {
+	Name          string
+	TableName     string
+	Note          string // descript
+	CreateSQL     string // create table sql
+	StructContent string
+}
+
+type FileInfo struct {
+	PackageName string
+	FileDir     string
+	FileName    string
+}

@@ -1,41 +1,44 @@
-### 数据库表转换为golang 结构体
+### Convert database table to Golang struct
 
-#### 1. 获取方式
-
-```shell
-go get github.com/enjoy322/ormtool@v1.1.0
-```
-
-#### 2. 配置说明
-
-说明：数据库字段需为小写下划线
+#### 1. Get
 
 ```shell
-# 保存路径
-SavePath:       "./models/model.go",
-# 是否生成web json tag
-IsGenJsonTag:   true,
-# 是否生成在同一文件
-IsGenInOneFile: true,
-# 1：不生成数据库基本信息 2：生成简单的数据库字段信息
-GenDBInfoType: 2,
-# json tag类型，前提：IsGenJsonTag:true. 1.UserName 2.userName 3.user_name 4.user-name
-JsonTagType:    1,
-# 是否生成建表语句
-IsGenCreateSQL: true
-# 自定义对应类型，优先选择;map类型,key对应表字段类型,value对应Golang生成类型
-CustomType: 
+go get github.com/enjoy322/ormtool@v1.2.0
 ```
-> 自定义类型，如下
+
+#### 2. Configuration
+
+Note：The database field should be underlined in lowercase
+
 ```go
-map[string]string{ "int": "int", 
+// relative path
+SavePath: "../../models/model.go",
+// json tag
+IsGenJsonTag: true,
+// Generate one file or files
+IsGenInOneFile: true,
+// Generate simple database field information like: "int unsigned not null"
+// value 1:not generate; 2：simple info
+GenDBInfoType: 2,
+// json tag type. The necessary conditions：IsGenJsonTag:true.
+// 1.UserName 2.user_name 3.userName 4.user-name
+JsonTagType: 3,
+// sql of creating table in dateabase
+IsGenCreateSQL: true,
+// custom type relationships will be preferred
+// the key is the database type, the value is the golang type
+CustomType: map[string]string{
+	"int":          "int",
 	"int unsigned": "uint32",
-	"tinyint(1)":   "bool",}
+	"tinyint(1)":   "bool",
+	"json":         "json.RawMessage",
+},
 ```
 
 ---
-*欢迎提交pr和issue*
+*welcome pr和issue*
 ---
 
-参考
+
+#### Reference
 > https://github.com/gohouse/converter

@@ -2,8 +2,9 @@ package mysqlTool
 
 import (
 	"database/sql"
-	"github.com/enjoy322/ormtool/base"
 	"log"
+
+	"github.com/enjoy322/ormtool/base"
 )
 
 func GenMySQL(my base.MysqlConfig, c base.Config) {
@@ -14,7 +15,7 @@ func GenMySQL(my base.MysqlConfig, c base.Config) {
 			log.Fatalln(err)
 		}
 	}(db)
-	packageName, fileDir, fileName, data := Service(db).StructContent(my.Database, c)
-	// 写入文件
-	base.Write(packageName, fileDir, fileName, data, c.IsGenInOneFile)
+	fielData, data := Service(db).GenStruct(my.Database, c)
+	// write into file
+	base.Write(fielData, data, c.IsGenInOneFile)
 }

@@ -1,14 +1,37 @@
 package base
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+func DealStructName(s string) string {
+	if len(s) == 1 {
+		s = strings.ToUpper(s[:1])
+	} else {
+		split := strings.Split(s, "_")
+		var tName strings.Builder
+		for _, str := range split {
+			tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
+		}
+		s = tName.String()
+	}
+	return s
+}
+
+func predeal(s string) string {
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := reg.ReplaceAllString(s, "")
+	return data
+}
 
 // CamelCase 修改为大写开头的驼峰格式
 func CamelCase(str string) string {
@@ -32,32 +55,6 @@ func Case2Camel(name string) string {
 	return strings.Replace(name, " ", "", -1)
 }
 
-// DealFilePath 处理保存路径，包名和文件名
-func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
-	if !strings.HasSuffix(s, ".go") {
-		fmt.Println("保存路径错误，正确如./models/xx.go")
-		os.Exit(0)
-	}
-	if len(strings.Trim(s, " ")) < 1 {
-		packageName = "models"
-		fileDir = "models"
-		fileName = db
-		return
-	}
-	split := strings.Split(s, "/")
-	if len(split) <= 1 {
-		packageName = "models"
-		fileDir = "models"
-		fileName = s
-	} else {
-		packageName = split[len(split)-2]
-		fileName = split[len(split)-1]
-		s2 := strings.Split(s, "/"+fileName)
-		fileDir = s2[0]
-	}
-	return
-}
-
 //map排序
 func sortMap(m map[string]string) []map[string]string {
 	data := make([]map[string]string, 0)
@@ -75,31 +72,37 @@ func sortMap(m map[string]string) []map[string]string {
 }
 
 // Write 结构体信息写入go文件
-func Write(packageName, fileDir, fileName string, content map[string]string, oneFile bool) {
-	data := sortMap(content)
-	err := os.MkdirAll(fileDir, 0777)
+func Write(f FileInfo, data []StructInfo, oneFile bool) {
+	// data := sortMap(content)
+	err := os.MkdirAll(f.FileDir, 0777)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	if oneFile {
-		fileName = fileDir + "/" + fileName
+		f.FileName = f.FileDir + "/" + f.FileName
 		var s strings.Builder
-		s.WriteString("package " + packageName + "\n")
-		for _, datum := range data {
-			for _, v := range datum {
-				s.WriteString(v)
-			}
+		s.WriteString("package " + f.PackageName + "\n")
+		for _, v := range data {
+			s.WriteString(v.Note)
+			s.WriteString(v.CreateSQL)
+			s.WriteString(v.StructContent)
+			s.WriteString("\n\n")
+
 		}
-		writeToFile(fileName, s.String())
+		writeToFile(f.FileName, s.String())
 	} else {
-		for k, v := range content {
-			fileName = fileDir + "/" + k + ".go"
+		for _, v := range data {
+			fileName := f.FileDir + "/" + v.Name + ".go"
 			var s strings.Builder
-			s.WriteString("package " + packageName + "\n")
-			s.WriteString(v)
+			s.WriteString("package " + f.PackageName + "\n")
+			s.WriteString(v.Note)
+			s.WriteString(v.CreateSQL)
+			s.WriteString(v.StructContent)
+			s.WriteString("\n\n")
 			writeToFile(fileName, s.String())
 		}
+
 	}
 }
 

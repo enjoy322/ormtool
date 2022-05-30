@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//mysql连接
+//mysql connect
 func dbConn(c base.MysqlConfig) *sql.DB {
 	conn := strings.Builder{}
 	conn.WriteString(c.User)

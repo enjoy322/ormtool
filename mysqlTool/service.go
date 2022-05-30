@@ -2,23 +2,31 @@ package mysqlTool
 
 import (
 	"database/sql"
-	"github.com/enjoy322/ormtool/base"
 	"log"
 	"strings"
+
+	"github.com/enjoy322/ormtool/base"
 )
 
 type Method interface {
-	// GetTableComment 查询表注释
-	GetTableComment(dbName string) map[string]string
-	// GetCreateSQL 获取建表语句
-	GetCreateSQL(tableName string) string
-	// GetColumn 获取数据库表信息
-	GetColumn() map[string][]column
-	// DealColumn 处理结构体字段 生成的tag信息
-	DealColumn(c base.Config) map[string][]column
+	GenStruct(dbName string, c base.Config) (fileData base.FileInfo, data []base.StructInfo)
+
+	dealStructContent(tableName string, columns []column) string
+
+	dealColumn(c base.Config) map[string][]column
+
+	dealType(c base.Config, typeSimple, typeDetail string) string
+
+	getColumn() map[string][]column
+
+	getTableComment(dbName string) map[string]string
+
+	getCreateSQL(tableName string) string
 }
 type service struct {
-	*sql.DB
+	DB       *sql.DB
+	Info     []base.StructInfo
+	FileInfo base.FileInfo
 }
 
 func Service(DB *sql.DB) *service {
@@ -27,17 +35,14 @@ func Service(DB *sql.DB) *service {
 
 type column struct {
 	ColumnDBName string
-	//列名
-	ColumnName string
-	//字段类型，如varchar
+	ColumnName   string
+	//example: varchar
 	DataType string
-	//字段类型，显示细节，如varchar(32)
+	//example: varchar(32)
 	ColumnType string
-	//默认值
-	Default interface{}
-	//表名
-	TableName string
-	//字段注释
+	//default value
+	Default       interface{}
+	TableName     string
 	ColumnComment string
 	Length        interface{}
 	IsNullable    string
@@ -45,96 +50,91 @@ type column struct {
 	Tag           string
 }
 
-// StructContent 结构体信息
-func (s service) StructContent(dbName string, c base.Config) (packageName, fileDir, fileName string, data map[string]string) {
-	// 查询表名注释
-	tableCommentMap := s.GetTableComment(dbName)
-	// 查询数据库的所有表
-	tables := s.DealColumn(c)
-	// 处理保存路径名称
-	packageName, fileDir, fileName = base.DealFilePath(c.SavePath, dbName)
+// GenStruct struct info, include: struct comment, create table sql
+func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo, data []base.StructInfo) {
+	// all table comments
+	tableCommentMap := s.getTableComment(dbName)
+	// all tables
+	tables := s.dealColumn(c)
+	// save file info
+	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = DealFilePath(c.SavePath, dbName)
 
-	data = make(map[string]string)
+	// data = make(map[string]string)
+
 	for tableName, columns := range tables {
-		var createSQL string
+		var info base.StructInfo
+
+		// table name
+		info.TableName = tableName
+
+		// create table sql
 		if c.IsGenCreateSQL {
-			// 需要建表SQL语句
-			createSQL = s.GetCreateSQL(tableName)
+			info.CreateSQL = s.getCreateSQL(tableName)
 		}
 
-		// 表（结构体内容）
-		var structInfo strings.Builder
-		// 结构体名称
-		structName := tableName
-		if len(structName) == 1 {
-			structName = strings.ToUpper(tableName[:1])
-		} else {
-			split := strings.Split(tableName, "_")
-			var tName strings.Builder
-			for _, str := range split {
-				tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
-			}
-			structName = tName.String()
-		}
+		// struct info
+		info.StructContent = s.dealStructContent(tableName, columns)
 
-		// 结构体名称后加注释（如果表存在注释情况下
+		info.Name = base.DealStructName(tableName)
+
+		// table comment
+		// add if table comment exists
 		if v, ok := tableCommentMap[tableName]; ok {
 			if v != "" || c.IsGenCreateSQL {
-				//判断生成表注释
-				structInfo.WriteString("// " + structName + "\t" + v + "\n")
+				info.Note = ("// " + info.Name + "\t" + v + "\n")
 			}
 		}
 
-		//添加建表SQL语句
-		if c.IsGenCreateSQL {
-			structInfo.WriteString("/*")
-			structInfo.WriteString(createSQL)
-			structInfo.WriteString("*/\n")
-		}
+		s.Info = append(s.Info, info)
 
-		// 结构体字段
-		structInfo.WriteString("type " + structName + " struct {\n")
-		for _, v := range columns {
-			structInfo.WriteString("\t")
-			structInfo.WriteString(v.ColumnName)
-			structInfo.WriteString("\t")
-			structInfo.WriteString(v.ColumnType)
-			structInfo.WriteString("\t")
-			structInfo.WriteString(v.Tag)
-			structInfo.WriteString("\t")
-			if v.ColumnComment != "" {
-				structInfo.WriteString(" // ")
-				structInfo.WriteString(v.ColumnComment)
-			}
-			structInfo.WriteString("\n")
-		}
-		structInfo.WriteString("}\n\n")
-		// 数据库表名函数
-		structInfo.WriteString("func (*" + structName + ") TableName() string {\n")
-		structInfo.WriteString("return \"" + tableName + "\"")
-		structInfo.WriteString("\n}\n")
-
-		//结构体字段与表字段对应
-		structInfo.WriteString("var " + structName + "Col = struct {\n")
-		for _, v := range columns {
-			structInfo.WriteString(v.ColumnName)
-			structInfo.WriteString("\t" + "string\n")
-		}
-		structInfo.WriteString("}{\n")
-		for _, v := range columns {
-			structInfo.WriteString(v.ColumnName)
-			structInfo.WriteString(":\t\"" + strings.ToLower(v.ColumnDBName) + "\"" + ",\n")
-		}
-		structInfo.WriteString("\n}\n")
-
-		data[tableName] = structInfo.String()
 	}
-	return
+	return s.FileInfo, s.Info
 }
 
-// DealColumn 处理结构体字段 生成的tag信息
-func (s service) DealColumn(c base.Config) map[string][]column {
-	tables := s.GetColumn()
+func (s service) dealStructContent(tableName string, columns []column) string {
+	var info strings.Builder
+	// struct name
+	structName := base.DealStructName(tableName)
+
+	info.WriteString("type " + structName + " struct {\n")
+	for _, v := range columns {
+		info.WriteString("\t")
+		info.WriteString(v.ColumnName)
+		info.WriteString("\t")
+		info.WriteString(v.ColumnType)
+		info.WriteString("\t")
+		info.WriteString(v.Tag)
+		info.WriteString("\t")
+		if v.ColumnComment != "" {
+			info.WriteString(" // ")
+			info.WriteString(v.ColumnComment)
+		}
+		info.WriteString("\n")
+	}
+	info.WriteString("}\n\n")
+	// function for get table name in database
+	info.WriteString("func (*" + structName + ") TableName() string {\n")
+	info.WriteString("return \"" + tableName + "\"")
+	info.WriteString("\n}\n")
+
+	info.WriteString("var " + structName + "Col = struct {\n")
+	for _, v := range columns {
+		info.WriteString(v.ColumnName)
+		info.WriteString("\t" + "string\n")
+	}
+	info.WriteString("}{\n")
+	for _, v := range columns {
+		info.WriteString(v.ColumnName)
+		info.WriteString(":\t\"" + strings.ToLower(v.ColumnDBName) + "\"" + ",\n")
+	}
+	info.WriteString("\n}\n")
+
+	return info.String()
+}
+
+// DealColumn judge column type and generate tag info
+func (s service) dealColumn(c base.Config) map[string][]column {
+	tables := s.getColumn()
 	for _, cols := range tables {
 		for i, col := range cols {
 			var f bool
@@ -167,13 +167,13 @@ func (s service) DealColumn(c base.Config) map[string][]column {
 				cols[i].Tag += "`"
 			}
 			cols[i].ColumnName = base.CamelCase(col.ColumnName)
-			cols[i].ColumnType = dealType(c, col.DataType, col.ColumnType)
+			cols[i].ColumnType = s.dealType(c, col.DataType, col.ColumnType)
 		}
 	}
 	return tables
 }
 
-func dealType(c base.Config, typeSimple, typeDetail string) string {
+func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
 	if v, ok := c.CustomType[typeDetail]; ok {
 		return v
 	}
@@ -194,8 +194,8 @@ func dealType(c base.Config, typeSimple, typeDetail string) string {
 	return ""
 }
 
-// GetColumn 获取数据库表信息
-func (s service) GetColumn() map[string][]column {
+// GetColumn columns of table
+func (s service) getColumn() map[string][]column {
 	tables := make(map[string][]column)
 	//IS_NULLABLE,COLUMN_DEFAULT,CHARACTER_MAXIMUM_LENGTH
 	sqlStr := "SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME," +
@@ -208,7 +208,7 @@ func (s service) GetColumn() map[string][]column {
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			log.Fatalln(err)
 		}
 	}(rows)
 	for rows.Next() {
@@ -224,8 +224,8 @@ func (s service) GetColumn() map[string][]column {
 	return tables
 }
 
-// GetCreateSQL 获取建表语句
-func (s service) GetCreateSQL(tableName string) string {
+// GetCreateSQL sql of creating table in database
+func (s service) getCreateSQL(tableName string) string {
 	sqlStr := "show create table " + tableName
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
@@ -234,7 +234,7 @@ func (s service) GetCreateSQL(tableName string) string {
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			log.Fatalln(err)
 		}
 	}(rows)
 
@@ -242,20 +242,25 @@ func (s service) GetCreateSQL(tableName string) string {
 		Table string `json:"Table"`
 		SQL   string `json:"Create Table"`
 	}
+	var cSql CreateSQL
 
 	for rows.Next() {
-		var cSql CreateSQL
 		err = rows.Scan(&cSql.Table, &cSql.SQL)
 		if err != nil {
 			log.Fatalln(err.Error())
 		}
-		return cSql.SQL
 	}
-	return ""
+
+	var info strings.Builder
+	info.WriteString("/*")
+	info.WriteString(cSql.SQL)
+	info.WriteString("*/\n")
+
+	return info.String()
 }
 
-// GetTableComment  获取表注释信息
-func (s service) GetTableComment(dbName string) map[string]string {
+// GetTableComment  comment fo table
+func (s service) getTableComment(dbName string) map[string]string {
 	sqlStr := "show table status from " + dbName
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
@@ -264,7 +269,7 @@ func (s service) GetTableComment(dbName string) map[string]string {
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			log.Fatalln(err)
 		}
 	}(rows)
 	columns, _ := rows.Columns()
@@ -298,4 +303,29 @@ func (s service) GetTableComment(dbName string) map[string]string {
 		}
 	}
 	return m
+}
+
+// DealFilePath back save path and package name
+func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
+	if !strings.HasSuffix(s, ".go") {
+		log.Fatalln("path error! correct example: ./models/xx.go")
+	}
+	if len(strings.Trim(s, " ")) < 1 {
+		packageName = "models"
+		fileDir = "models"
+		fileName = db
+		return
+	}
+	split := strings.Split(s, "/")
+	if len(split) <= 1 {
+		packageName = "models"
+		fileDir = "models"
+		fileName = s
+	} else {
+		packageName = split[len(split)-2]
+		fileName = split[len(split)-1]
+		s2 := strings.Split(s, "/"+fileName)
+		fileDir = s2[0]
+	}
+	return
 }
