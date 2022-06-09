@@ -9,17 +9,17 @@ import (
 )
 
 type Method interface {
-	GenStruct(dbName string, c base.Config) (fileData base.FileInfo, data []base.StructInfo)
+	GenStruct() (fileData base.FileInfo, data []base.StructInfo)
 
-	dealStructContent(tableName string, columns []column) string
+	listTables() []tableInfo
 
-	dealColumn(c base.Config) map[string][]column
+	listColumns() map[string][]column
+
+	dealColumn(t *tableInfo)
+
+	dealStructContent(t tableInfo) string
 
 	dealType(c base.Config, typeSimple, typeDetail string) string
-
-	getColumn() map[string][]column
-
-	getTableComment(dbName string) map[string]string
 
 	getCreateSQL(tableName string) string
 }
@@ -27,10 +27,18 @@ type service struct {
 	DB       *sql.DB
 	Info     []base.StructInfo
 	FileInfo base.FileInfo
+	dbName   string
+	Conf     base.Config
 }
 
-func Service(DB *sql.DB) *service {
-	return &service{DB: DB}
+func Service(DB *sql.DB, dbName string, c base.Config) *service {
+	return &service{DB: DB, dbName: dbName, Conf: c}
+}
+
+type tableInfo struct {
+	TableName    string
+	TableComment string
+	column       []column
 }
 
 type column struct {
@@ -44,45 +52,46 @@ type column struct {
 	Default       interface{}
 	TableName     string
 	ColumnComment string
-	Length        interface{}
-	IsNullable    string
-	ColumnKey     string
-	Tag           string
+	//Length        interface{}
+	IsNullable string
+	//ColumnKey     string
+	Tag string
 }
 
 // GenStruct struct info, include: struct comment, create table sql
-func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo, data []base.StructInfo) {
-	// all table comments
-	tableCommentMap := s.getTableComment(dbName)
-	// all tables
-	tables := s.dealColumn(c)
+func (s service) GenStruct() (fileData base.FileInfo, data []base.StructInfo) {
 	// save file info
-	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = DealFilePath(c.SavePath, dbName)
+	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = base.DealFilePath(s.Conf.SavePath, s.dbName)
 
-	// data = make(map[string]string)
+	tables := s.listTables()
+	columns := s.listColumns()
 
-	for tableName, columns := range tables {
+	for _, table := range tables {
+		if v, ok := columns[table.TableName]; ok {
+			table.column = v
+		}
+
 		var info base.StructInfo
 
 		// table name
-		info.TableName = tableName
+		info.TableName = table.TableName
 
 		// create table sql
-		if c.IsGenCreateSQL {
-			info.CreateSQL = s.getCreateSQL(tableName)
+		if s.Conf.IsGenCreateSQL {
+			info.CreateSQL = s.getCreateSQL(table.TableName)
 		}
+		// deal column
+		s.dealColumn(&table)
 
 		// struct info
-		info.StructContent = s.dealStructContent(tableName, columns)
+		info.StructContent = s.dealStructContent(table)
 
-		info.Name = base.UpperCamel(tableName)
+		info.Name = base.UpperCamel(table.TableName)
 
 		// table comment
 		// add if table comment exists
-		if v, ok := tableCommentMap[tableName]; ok {
-			if v != "" || c.IsGenCreateSQL {
-				info.Note = "// " + info.Name + "\t" + v + "\n"
-			}
+		if table.TableComment != "" || s.Conf.IsGenCreateSQL {
+			info.Note = "// " + info.Name + "\t" + table.TableComment + "\n"
 		}
 
 		s.Info = append(s.Info, info)
@@ -91,13 +100,52 @@ func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo
 	return s.FileInfo, s.Info
 }
 
-func (s service) dealStructContent(tableName string, columns []column) string {
+// DealColumn judge column type and generate tag info
+func (s service) dealColumn(t *tableInfo) {
+	for i := 0; i < len(t.column); i++ {
+		var f bool
+		if s.Conf.IsGenJsonTag {
+			//生成 json tag
+			f = true
+			t.column[i].Tag = "`json:\"" + base.JsonTag(s.Conf.JsonTagType, t.column[i].ColumnName) + "\""
+		}
+		if s.Conf.GenDBInfoType == 2 {
+			t.column[i].Tag = t.column[i].Tag + " "
+		}
+		switch s.Conf.GenDBInfoType {
+		case 1:
+		case 2:
+			if !f {
+				t.column[i].Tag += "`"
+			}
+			f = true
+			t.column[i].Tag += "db:\"" + t.column[i].ColumnType
+			var sNull string
+			if t.column[i].IsNullable == "NO" {
+				sNull = " not null"
+			}
+			t.column[i].Tag += sNull
+			if t.column[i].Default != nil {
+				t.column[i].Tag += " default " + string(t.column[i].Default.([]uint8))
+			}
+			t.column[i].Tag += "\""
+		}
+
+		if f {
+			t.column[i].Tag += "`"
+		}
+		t.column[i].ColumnName = base.UpperCamel(t.column[i].ColumnName)
+		t.column[i].ColumnType = s.dealType(s.Conf, t.column[i].DataType, t.column[i].ColumnType)
+	}
+}
+
+func (s service) dealStructContent(t tableInfo) string {
 	var info strings.Builder
 	// struct name
-	structName := base.UpperCamel(tableName)
+	structName := base.UpperCamel(t.TableName)
 
 	info.WriteString("type " + structName + " struct {\n")
-	for _, v := range columns {
+	for _, v := range t.column {
 		info.WriteString("\t")
 		info.WriteString(v.ColumnName)
 		info.WriteString("\t")
@@ -114,63 +162,22 @@ func (s service) dealStructContent(tableName string, columns []column) string {
 	info.WriteString("}\n\n")
 	// function for get table name in database
 	info.WriteString("func (*" + structName + ") TableName() string {\n")
-	info.WriteString("return \"" + tableName + "\"")
+	info.WriteString("return \"" + t.TableName + "\"")
 	info.WriteString("\n}\n")
 
 	info.WriteString("var " + structName + "Col = struct {\n")
-	for _, v := range columns {
+	for _, v := range t.column {
 		info.WriteString(v.ColumnName)
 		info.WriteString("\t" + "string\n")
 	}
 	info.WriteString("}{\n")
-	for _, v := range columns {
+	for _, v := range t.column {
 		info.WriteString(v.ColumnName)
 		info.WriteString(":\t\"" + strings.ToLower(v.ColumnDBName) + "\"" + ",\n")
 	}
 	info.WriteString("\n}\n")
 
 	return info.String()
-}
-
-// DealColumn judge column type and generate tag info
-func (s service) dealColumn(c base.Config) map[string][]column {
-	tables := s.getColumn()
-	for _, cols := range tables {
-		for i, col := range cols {
-			var f bool
-			if c.IsGenJsonTag {
-				//生成 json tag
-				f = true
-				cols[i].Tag = "`json:\"" + base.JsonTag(c.JsonTagType, col.ColumnName) + "\" "
-			}
-			switch c.GenDBInfoType {
-			case 1:
-
-			case 2:
-				if !f {
-					cols[i].Tag += "`"
-				}
-				f = true
-				cols[i].Tag += "db:\"" + col.ColumnType
-				var sNull string
-				if col.IsNullable == "NO" {
-					sNull = " not null"
-				}
-				cols[i].Tag += sNull
-				if col.Default != nil {
-					cols[i].Tag += " default " + string(col.Default.([]uint8))
-				}
-				cols[i].Tag += "\""
-			}
-
-			if f {
-				cols[i].Tag += "`"
-			}
-			cols[i].ColumnName = base.UpperCamel(col.ColumnName)
-			cols[i].ColumnType = s.dealType(c, col.DataType, col.ColumnType)
-		}
-	}
-	return tables
 }
 
 func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
@@ -183,36 +190,6 @@ func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
 	default:
 		return mysqlToGo[typeSimple]
 	}
-}
-
-// GetColumn columns of table
-func (s service) getColumn() map[string][]column {
-	tables := make(map[string][]column)
-	//IS_NULLABLE,COLUMN_DEFAULT,CHARACTER_MAXIMUM_LENGTH
-	sqlStr := "SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME," +
-		"COLUMN_COMMENT,character_maximum_length,IS_NULLABLE,COLUMN_KEY" +
-		" FROM information_schema.COLUMNS WHERE table_schema = DATABASE()"
-	rows, err := s.DB.Query(sqlStr)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}(rows)
-	for rows.Next() {
-		col := column{}
-		err = rows.Scan(&col.ColumnName, &col.DataType, &col.ColumnType, &col.Default,
-			&col.TableName, &col.ColumnComment, &col.Length, &col.IsNullable, &col.ColumnKey)
-		if err != nil {
-			log.Fatalln(err.Error())
-		}
-		col.ColumnDBName = col.ColumnName
-		tables[col.TableName] = append(tables[col.TableName], col)
-	}
-	return tables
 }
 
 // GetCreateSQL sql of creating table in database
@@ -250,10 +227,13 @@ func (s service) getCreateSQL(tableName string) string {
 	return info.String()
 }
 
-// GetTableComment  comment fo table
-func (s service) getTableComment(dbName string) map[string]string {
-	sqlStr := "show table status from " + dbName
-	rows, err := s.DB.Query(sqlStr)
+func (s service) listColumns() map[string][]column {
+	tables := make(map[string][]column)
+	sqlStr := `SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME,
+       COLUMN_COMMENT
+   FROM information_schema.COLUMNS WHERE table_schema = ? order by TABLE_NAME`
+	rows, err := s.DB.Query(sqlStr, s.dbName)
+
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -263,61 +243,40 @@ func (s service) getTableComment(dbName string) map[string]string {
 			log.Fatalln(err)
 		}
 	}(rows)
-	columns, _ := rows.Columns()
-	columnLength := len(columns)
-	// save per line data
-	cache := make([]interface{}, columnLength)
-	for i := 0; i < len(cache); i++ {
-		var a interface{}
-		cache[i] = &a
-	}
-
-	var list []map[string]interface{}
 	for rows.Next() {
-		err = rows.Scan(cache...)
+		col := column{}
+		err = rows.Scan(&col.ColumnName, &col.DataType, &col.ColumnType, &col.Default,
+			&col.TableName, &col.ColumnComment)
 		if err != nil {
 			log.Fatalln(err.Error())
 		}
-		item := make(map[string]interface{})
-		for i, data := range cache {
-			item[columns[i]] = *data.(*interface{})
-		}
-		list = append(list, item)
+		col.ColumnDBName = col.ColumnName
+		tables[col.TableName] = append(tables[col.TableName], col)
 	}
-	m := make(map[string]string)
-	for _, i := range list {
-		if v, ok := i["Name"]; ok {
-			tName := string(v.([]uint8))
-			if v, ok := i["Comment"]; ok {
-				comment := string(v.([]uint8))
-				m[tName] = comment
-			}
-		}
-	}
-	return m
+	return tables
 }
 
-// DealFilePath back save path and package name
-func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
-	if !strings.HasSuffix(s, ".go") {
-		log.Fatalln("path error! correct example: ./models/xx.go")
+func (s service) listTables() []tableInfo {
+	sqlStr := `select Table_Name,Table_Comment from information_schema.TABLES where TABLE_SCHEMA=?`
+
+	rows, err := s.DB.Query(sqlStr, s.dbName)
+	if err != nil {
+		log.Fatalln(err.Error())
 	}
-	if len(strings.Trim(s, " ")) < 1 {
-		packageName = "models"
-		fileDir = "models"
-		fileName = db
-		return
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}(rows)
+	var list []tableInfo
+	for rows.Next() {
+		var i tableInfo
+		err := rows.Scan(&i.TableName, &i.TableComment)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		list = append(list, i)
 	}
-	split := strings.Split(s, "/")
-	if len(split) <= 1 {
-		packageName = "models"
-		fileDir = "models"
-		fileName = s
-	} else {
-		packageName = split[len(split)-2]
-		fileName = split[len(split)-1]
-		s2 := strings.Split(s, "/"+fileName)
-		fileDir = s2[0]
-	}
-	return
+	return list
 }

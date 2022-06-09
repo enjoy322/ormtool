@@ -16,13 +16,13 @@ func GenMysql() {
 		base.Config{
 			// relative path
 			SavePath: "../models/model.go",
-			// json tag
-			IsGenJsonTag: true,
 			// Generate one file or files
 			IsGenInOneFile: true,
 			// Generate simple database field information like: "int unsigned not null"
 			// value 1:not generate; 2：simple info
 			GenDBInfoType: 1,
+			// json tag
+			IsGenJsonTag: true,
 			// json tag type. The necessary conditions：IsGenJsonTag:true.
 			// 1.UserName 2.userName 3.user_name 4.user-name
 			JsonTagType: 3,

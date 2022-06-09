@@ -15,7 +15,7 @@ func GenMySQL(my base.MysqlConfig, c base.Config) {
 			log.Fatalln(err)
 		}
 	}(db)
-	fielData, data := Service(db).GenStruct(my.Database, c)
+	fileData, data := Service(db, my.Database, c).GenStruct()
 	// write into file
-	base.Write(fielData, data, c.IsGenInOneFile)
+	base.Write(fileData, data, c.IsGenInOneFile)
 }

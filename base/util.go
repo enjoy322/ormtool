@@ -23,10 +23,33 @@ func UpperCamel(s string) string {
 	return s
 }
 
+// DealFilePath back save path and package name
+func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
+	if !strings.HasSuffix(s, ".go") {
+		log.Fatalln("path error! correct example: ./models/xx.go")
+	}
+	if len(strings.Trim(s, " ")) < 1 {
+		packageName = "models"
+		fileDir = "models"
+		fileName = db
+		return
+	}
+	split := strings.Split(s, "/")
+	if len(split) <= 1 {
+		packageName = "models"
+		fileDir = "models"
+		fileName = s
+	} else {
+		packageName = split[len(split)-2]
+		fileName = split[len(split)-1]
+		s2 := strings.Split(s, "/"+fileName)
+		fileDir = s2[0]
+	}
+	return
+}
+
 // Write struct information to .go file
 func Write(f FileInfo, data []StructInfo, oneFile bool) {
-	// todo
-	// sort alphabetically
 	err := os.MkdirAll(f.FileDir, 0777)
 	if err != nil {
 		log.Fatalln(err)
