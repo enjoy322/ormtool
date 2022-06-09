@@ -1,17 +1,19 @@
 package models
 
+import "encoding/json"
+
 // User	用户表
 /*CREATE TABLE `user` (
-  `id` int unsigned NOT NULL COMMENT '主键',
-  `created_at` int unsigned DEFAULT NULL COMMENT '创建时间',
-  `updated_at` int unsigned DEFAULT NULL COMMENT '更新时间',
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_name` varchar(64) DEFAULT NULL COMMENT '用户名',
+  `avatar` json DEFAULT NULL COMMENT '头像',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id_uindex` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表'*/
 type User struct {
-	Id        uint32 `json:"id" db:"int unsigned not null"` // 主键
-	CreatedAt uint32 `json:"created_at" db:"int unsigned"`  // 创建时间
-	UpdatedAt uint32 `json:"updated_at" db:"int unsigned"`  // 更新时间
+	Id       int             `json:"id" `
+	UserName string          `json:"user-name" ` // 用户名
+	Avatar   json.RawMessage `json:"avatar" `    // 头像
 }
 
 func (*User) TableName() string {
@@ -19,11 +21,11 @@ func (*User) TableName() string {
 }
 
 var UserCol = struct {
-	Id        string
-	CreatedAt string
-	UpdatedAt string
+	Id       string
+	UserName string
+	Avatar   string
 }{
-	Id:        "id",
-	CreatedAt: "created_at",
-	UpdatedAt: "updated_at",
+	Id:       "id",
+	UserName: "user_name",
+	Avatar:   "avatar",
 }

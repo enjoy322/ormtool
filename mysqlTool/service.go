@@ -75,7 +75,7 @@ func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo
 		// struct info
 		info.StructContent = s.dealStructContent(tableName, columns)
 
-		info.Name = base.DealStructName(tableName)
+		info.Name = base.UpperCamel(tableName)
 
 		// table comment
 		// add if table comment exists
@@ -94,7 +94,7 @@ func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo
 func (s service) dealStructContent(tableName string, columns []column) string {
 	var info strings.Builder
 	// struct name
-	structName := base.DealStructName(tableName)
+	structName := base.UpperCamel(tableName)
 
 	info.WriteString("type " + structName + " struct {\n")
 	for _, v := range columns {
@@ -166,7 +166,7 @@ func (s service) dealColumn(c base.Config) map[string][]column {
 			if f {
 				cols[i].Tag += "`"
 			}
-			cols[i].ColumnName = base.CamelCase(col.ColumnName)
+			cols[i].ColumnName = base.UpperCamel(col.ColumnName)
 			cols[i].ColumnType = s.dealType(c, col.DataType, col.ColumnType)
 		}
 	}

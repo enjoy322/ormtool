@@ -4,55 +4,25 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-func DealStructName(s string) string {
-	if len(s) == 1 {
-		s = strings.ToUpper(s[:1])
-	} else {
-		split := strings.Split(s, "_")
-		var tName strings.Builder
-		for _, str := range split {
-			tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
-		}
-		s = tName.String()
+func UpperCamel(s string) string {
+	s = strings.TrimSpace(s)
+
+	if len(s) <= 1 {
+		return strings.ToUpper(s)
 	}
+
+	split := strings.Split(s, "_")
+	var tName strings.Builder
+	for _, str := range split {
+		tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
+	}
+	s = tName.String()
 	return s
-}
-
-func predeal(s string) string {
-	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		log.Fatal(err)
-	}
-	data := reg.ReplaceAllString(s, "")
-	return data
-}
-
-// CamelCase 修改为大写开头的驼峰格式
-func CamelCase(str string) string {
-	var text string
-	for _, p := range strings.Split(str, "_") {
-		// 字段首字母大写的同时, 是否要把其他字母转换为小写
-		switch len(p) {
-		case 0:
-		case 1:
-			text += strings.ToUpper(p[0:1])
-		default:
-			text += strings.ToUpper(p[0:1]) + p[1:]
-		}
-	}
-	return text
-}
-
-func Case2Camel(name string) string {
-	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
-	return strings.Replace(name, " ", "", -1)
 }
 
 //map排序
@@ -142,9 +112,9 @@ func JsonTag(jsonType int, origin string) string {
 	switch jsonType {
 	//1.UserName 2.userName 3.user_name 4.user-name
 	case 1:
-		return Case2Camel(origin)
+		return UpperCamel(origin)
 	case 2:
-		s1 := Case2Camel(origin)
+		s1 := UpperCamel(origin)
 		return strings.ToLower(s1[:1]) + s1[1:]
 	case 3:
 		return strings.ToLower(origin)
