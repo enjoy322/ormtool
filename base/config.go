@@ -1,37 +1,40 @@
 package base
 
-// Config 配置文件
+// Config config information
 type Config struct {
-	// 生成文件名，默认[数据库].go,使用相对路径
+	// file relative path
 	SavePath string
-	// 生成json tag
+	// json tag
 	IsGenJsonTag bool
-	// 生成在同一个文件中
+	// Generate one file or files by table
 	IsGenInOneFile bool
-	// 生成数据库字段信息  1.不生产 2.普通字段信息
+	// Generate simple database field information like: "int unsigned not null"
+	// value 1:not generate; 2：simple info
 	GenDBInfoType int
-	// jsonTag类型 1.UserName 2.userName 3.user_name 4.user-name
+	// json tag type. The necessary conditions：IsGenJsonTag:true.
+	// 1.UserName 2.userName 3.user_name 4.user-name
 	JsonTagType int
-	//	是否生成建表语句
+	// sql of creating table in database
 	IsGenCreateSQL bool
-	//	自定义数据库和Go类型对应关系
+	// custom type relationships will be preferred
+	// the key is the database type, the value is the golang type
 	CustomType map[string]string
 }
 
-// MysqlConfig mysql配置
+// MysqlConfig mysql config information
 type MysqlConfig struct {
 	User     string
 	Password string
 	Host     string
 	Port     string
-	// 数据库名称
+	// database name
 	Database string
 }
 
 type StructInfo struct {
 	Name          string
 	TableName     string
-	Note          string // descript
+	Note          string // description
 	CreateSQL     string // create table sql
 	StructContent string
 }

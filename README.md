@@ -21,7 +21,7 @@ IsGenInOneFile: true,
 // value 1:not generate; 2：simple info
 GenDBInfoType: 2,
 // json tag type. The necessary conditions：IsGenJsonTag:true.
-// 1.UserName 2.user_name 3.userName 4.user-name
+// 1.UserName 2.userName 3.user_name 4.user-name
 JsonTagType: 3,
 // sql of creating table in dateabase
 IsGenCreateSQL: true,

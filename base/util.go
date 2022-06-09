@@ -4,8 +4,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -25,25 +23,10 @@ func UpperCamel(s string) string {
 	return s
 }
 
-//map排序
-func sortMap(m map[string]string) []map[string]string {
-	data := make([]map[string]string, 0)
-	var ks []string
-	for k, _ := range m {
-		ks = append(ks, k)
-	}
-	sort.Strings(ks)
-	for _, k := range ks {
-		m2 := make(map[string]string)
-		m2[k] = m[k]
-		data = append(data, m2)
-	}
-	return data
-}
-
-// Write 结构体信息写入go文件
+// Write struct information to .go file
 func Write(f FileInfo, data []StructInfo, oneFile bool) {
-	// data := sortMap(content)
+	// todo
+	// sort alphabetically
 	err := os.MkdirAll(f.FileDir, 0777)
 	if err != nil {
 		log.Fatalln(err)
@@ -76,7 +59,6 @@ func Write(f FileInfo, data []StructInfo, oneFile bool) {
 	}
 }
 
-//执行写入和格式化
 func writeToFile(fileName, content string) {
 	f, err := os.Create(fileName)
 	if err != nil {
@@ -95,10 +77,7 @@ func writeToFile(fileName, content string) {
 	goFormat(fileName)
 }
 
-// todo
-// imports
-
-//格式化
+//format go file
 func goFormat(fileName string) {
 	cmd := exec.Command("gofmt", "-w", fileName)
 	err := cmd.Run()
@@ -107,7 +86,7 @@ func goFormat(fileName string) {
 	}
 }
 
-// JsonTag 处理tag： json
+// JsonTag deal tag by jsonType
 func JsonTag(jsonType int, origin string) string {
 	switch jsonType {
 	//1.UserName 2.userName 3.user_name 4.user-name
@@ -120,23 +99,11 @@ func JsonTag(jsonType int, origin string) string {
 		return strings.ToLower(origin)
 	case 4:
 		return strings.Replace(origin, "_", "-", -1)
-
+	default:
+		// 3.user_name
+		return strings.ToLower(origin)
 	}
-	panic("json tag 参数错误")
 }
 
-// GetTypeNum 获取表字段长度约束
-func GetTypeNum(typeStr string) int {
-	f := strings.HasSuffix(typeStr, ")")
-	if f {
-		//	有长度约束
-		splitAfter := strings.SplitAfter(typeStr, "(")
-		n := splitAfter[1][:1]
-		i, err := strconv.Atoi(n)
-		if err != nil {
-			panic(err)
-		}
-		return i
-	}
-	return 0
-}
+// todo
+// imports

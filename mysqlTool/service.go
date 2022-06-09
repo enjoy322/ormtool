@@ -81,7 +81,7 @@ func (s service) GenStruct(dbName string, c base.Config) (fileData base.FileInfo
 		// add if table comment exists
 		if v, ok := tableCommentMap[tableName]; ok {
 			if v != "" || c.IsGenCreateSQL {
-				info.Note = ("// " + info.Name + "\t" + v + "\n")
+				info.Note = "// " + info.Name + "\t" + v + "\n"
 			}
 		}
 
@@ -178,20 +178,11 @@ func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
 		return v
 	}
 	switch typeSimple {
-	case "tinyint":
-		num := base.GetTypeNum(typeDetail)
-		switch num {
-		case 0:
-			return "string"
-		case 1:
-			return "bool"
-		}
 	case "int":
 		return mysqlToGo[typeDetail]
 	default:
 		return mysqlToGo[typeSimple]
 	}
-	return ""
 }
 
 // GetColumn columns of table
@@ -274,13 +265,14 @@ func (s service) getTableComment(dbName string) map[string]string {
 	}(rows)
 	columns, _ := rows.Columns()
 	columnLength := len(columns)
-	cache := make([]interface{}, columnLength) //临时存储每行数据
-	for index, _ := range cache {              //为每一列初始化一个指针
+	// save per line data
+	cache := make([]interface{}, columnLength)
+	for i := 0; i < len(cache); i++ {
 		var a interface{}
-		cache[index] = &a
+		cache[i] = &a
 	}
 
-	var list []map[string]interface{} //返回的切片
+	var list []map[string]interface{}
 	for rows.Next() {
 		err = rows.Scan(cache...)
 		if err != nil {
@@ -288,7 +280,7 @@ func (s service) getTableComment(dbName string) map[string]string {
 		}
 		item := make(map[string]interface{})
 		for i, data := range cache {
-			item[columns[i]] = *data.(*interface{}) //取实际类型
+			item[columns[i]] = *data.(*interface{})
 		}
 		list = append(list, item)
 	}
