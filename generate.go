@@ -7,8 +7,8 @@ import (
 	"github.com/enjoy322/ormtool/mysqlTool"
 )
 
-func GenerateMySQL(dbConf base.MysqlConfig, c base.Config) {
+func GenerateMySQL(c base.Config) {
 	log.Println("-----ormtool generating-----")
-	mysqlTool.GenMySQL(dbConf, c)
+	mysqlTool.NewService(c).Gen()
 	log.Println("-----ormtool done-----")
 }

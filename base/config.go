@@ -2,6 +2,11 @@ package base
 
 // Config config information
 type Config struct {
+	// connect mysql, [user]:[password]@tcp([host]:[port])/[database]?parseTime=true
+	ConnStr string
+
+	Database string
+
 	// file relative path
 	SavePath string
 	// json tag
@@ -19,16 +24,6 @@ type Config struct {
 	// custom type relationships will be preferred
 	// the key is the database type, the value is the golang type
 	CustomType map[string]string
-}
-
-// MysqlConfig mysql config information
-type MysqlConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
-	// database name
-	Database string
 }
 
 type StructInfo struct {

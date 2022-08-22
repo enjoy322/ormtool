@@ -31,8 +31,24 @@ type service struct {
 	Conf     base.Config
 }
 
-func Service(DB *sql.DB, dbName string, c base.Config) *service {
-	return &service{DB: DB, dbName: dbName, Conf: c}
+func NewService(c base.Config) *service {
+	conn := dbConn(c.ConnStr)
+
+	return &service{DB: conn, dbName: c.Database, Conf: c}
+}
+
+func (s service) Gen() {
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}(s.DB)
+
+	fileData, data := s.genStruct()
+	// write into file
+	base.Write(fileData, data, s.Conf.IsGenInOneFile)
+
 }
 
 type tableInfo struct {
@@ -59,7 +75,7 @@ type column struct {
 }
 
 // GenStruct struct info, include: struct comment, create table sql
-func (s service) GenStruct() (fileData base.FileInfo, data []base.StructInfo) {
+func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
 	// save file info
 	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = base.DealFilePath(s.Conf.SavePath, s.dbName)
 

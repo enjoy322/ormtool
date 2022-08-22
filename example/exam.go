@@ -7,15 +7,13 @@ import (
 
 func GenMysql() {
 	ormtool.GenerateMySQL(
-		base.MysqlConfig{
-			User:     "root",
-			Password: "qwe123",
-			Host:     "127.0.0.1",
-			Port:     "3306",
-			Database: "demo"},
 		base.Config{
+			//[user]:[password]@tcp([host]:[port])/[database]?parseTime=true
+			ConnStr: "root:qwe123@tcp(127.0.0.1:3306)/test?parseTime=true",
+			// database name
+			Database: "test",
 			// relative path
-			SavePath: "../models/model.go",
+			SavePath: "./model/model.go",
 			// Generate one file or files
 			IsGenInOneFile: true,
 			// Generate simple database field information like: "int unsigned not null"
