@@ -5,7 +5,7 @@ import (
 	"github.com/enjoy322/ormtool/base"
 )
 
-func GenMysql() {
+func genMysql() {
 	ormtool.GenerateMySQL(
 		base.Config{
 			//[user]:[password]@tcp([host]:[port])/[database]?parseTime=true

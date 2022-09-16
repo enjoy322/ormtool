@@ -9,7 +9,7 @@ import (
 )
 
 type Method interface {
-	GenStruct() (fileData base.FileInfo, data []base.StructInfo)
+	genStruct() (fileData base.FileInfo, data []base.StructInfo)
 
 	listTables() []tableInfo
 
