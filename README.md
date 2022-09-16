@@ -3,7 +3,7 @@
 #### 1. Get
 
 ```shell
-go get github.com/enjoy322/ormtool@v1.2.0
+go get github.com/enjoy322/ormtool@master
 ```
 
 #### 2. Configuration
