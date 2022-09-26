@@ -1,15 +1,13 @@
-package mysqlTool
+package ormtool
 
 import (
 	"database/sql"
 	"log"
 	"strings"
-
-	"github.com/enjoy322/ormtool/base"
 )
 
 type Method interface {
-	genStruct() (fileData base.FileInfo, data []base.StructInfo)
+	genStruct() (fileData FileInfo, data []StructInfo)
 
 	listTables() []tableInfo
 
@@ -19,20 +17,27 @@ type Method interface {
 
 	dealStructContent(t tableInfo) string
 
-	dealType(c base.Config, typeSimple, typeDetail string) string
+	dealType(c Config, typeSimple, typeDetail string) string
 
 	getCreateSQL(tableName string) string
 }
-type service struct {
-	DB       *sql.DB
-	Info     []base.StructInfo
-	FileInfo base.FileInfo
-	dbName   string
-	Conf     base.Config
+
+func GenerateMySQL(c Config) {
+	log.Println("-----ormtool generating-----")
+	newService(c).Gen()
+	log.Println("-----ormtool done-----")
 }
 
-func NewService(c base.Config) *service {
-	conn := dbConn(c.ConnStr)
+type service struct {
+	DB       *sql.DB
+	Info     []StructInfo
+	FileInfo FileInfo
+	dbName   string
+	Conf     Config
+}
+
+func newService(c Config) *service {
+	conn := mysqlConn(c.ConnStr)
 
 	return &service{DB: conn, dbName: c.Database, Conf: c}
 }
@@ -47,7 +52,7 @@ func (s service) Gen() {
 
 	fileData, data := s.genStruct()
 	// write into file
-	base.Write(fileData, data, s.Conf.IsGenInOneFile)
+	Write(fileData, data, s.Conf.IsGenInOneFile)
 
 }
 
@@ -75,9 +80,9 @@ type column struct {
 }
 
 // GenStruct struct info, include: struct comment, create table sql
-func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
+func (s service) genStruct() (fileData FileInfo, data []StructInfo) {
 	// save file info
-	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = base.DealFilePath(s.Conf.SavePath, s.dbName)
+	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = DealFilePath(s.Conf.SavePath, s.dbName)
 
 	tables := s.listTables()
 	columns := s.listColumns()
@@ -87,7 +92,7 @@ func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
 			table.column = v
 		}
 
-		var info base.StructInfo
+		var info StructInfo
 
 		// table name
 		info.TableName = table.TableName
@@ -102,7 +107,7 @@ func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
 		// struct info
 		info.StructContent = s.dealStructContent(table)
 
-		info.Name = base.UpperCamel(table.TableName)
+		info.Name = UpperCamel(table.TableName)
 
 		// table comment
 		// add if table comment exists
@@ -123,7 +128,7 @@ func (s service) dealColumn(t *tableInfo) {
 		if s.Conf.IsGenJsonTag {
 			//生成 json tag
 			f = true
-			t.column[i].Tag = "`json:\"" + base.JsonTag(s.Conf.JsonTagType, t.column[i].ColumnName) + "\""
+			t.column[i].Tag = "`json:\"" + JsonTag(s.Conf.JsonTagType, t.column[i].ColumnName) + "\""
 		}
 		if s.Conf.GenDBInfoType == 2 {
 			t.column[i].Tag = t.column[i].Tag + " "
@@ -150,7 +155,7 @@ func (s service) dealColumn(t *tableInfo) {
 		if f {
 			t.column[i].Tag += "`"
 		}
-		t.column[i].ColumnName = base.UpperCamel(t.column[i].ColumnName)
+		t.column[i].ColumnName = UpperCamel(t.column[i].ColumnName)
 		t.column[i].ColumnType = s.dealType(s.Conf, t.column[i].DataType, t.column[i].ColumnType)
 	}
 }
@@ -158,7 +163,7 @@ func (s service) dealColumn(t *tableInfo) {
 func (s service) dealStructContent(t tableInfo) string {
 	var info strings.Builder
 	// struct name
-	structName := base.UpperCamel(t.TableName)
+	structName := UpperCamel(t.TableName)
 
 	info.WriteString("type " + structName + " struct {\n")
 	for _, v := range t.column {
@@ -196,7 +201,7 @@ func (s service) dealStructContent(t tableInfo) string {
 	return info.String()
 }
 
-func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
+func (s service) dealType(c Config, typeSimple, typeDetail string) string {
 	if v, ok := c.CustomType[typeDetail]; ok {
 		return v
 	}

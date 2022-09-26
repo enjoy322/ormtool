@@ -1,4 +1,4 @@
-package mysqlTool
+package ormtool
 
 // mysql字段类型和golang对应关系
 var mysqlToGo = map[string]string{

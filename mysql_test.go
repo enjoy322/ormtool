@@ -1,13 +1,12 @@
-package example
+package ormtool
 
 import (
-	"github.com/enjoy322/ormtool"
-	"github.com/enjoy322/ormtool/base"
+	"testing"
 )
 
-func genMysql() {
-	ormtool.GenerateMySQL(
-		base.Config{
+func TestGenerateMySQL(t *testing.T) {
+	GenerateMySQL(
+		Config{
 			//[user]:[password]@tcp([host]:[port])/[database]?parseTime=true
 			ConnStr: "root:qwe123@tcp(127.0.0.1:3306)/test?parseTime=true",
 			// database name

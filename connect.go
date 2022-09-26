@@ -1,4 +1,4 @@
-package mysqlTool
+package ormtool
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 )
 
 //mysql connect
-func dbConn(conn string) *sql.DB {
+func mysqlConn(conn string) *sql.DB {
 	db, err := sql.Open("mysql", conn)
 	if err != nil {
 		log.Fatalln(err)

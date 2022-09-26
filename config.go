@@ -1,4 +1,4 @@
-package base
+package ormtool
 
 // Config config information
 type Config struct {
