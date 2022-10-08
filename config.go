@@ -6,7 +6,6 @@ type Config struct {
 	ConnStr string
 
 	Database string
-
 	// file relative path
 	SavePath string
 	// json tag

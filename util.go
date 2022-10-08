@@ -67,18 +67,18 @@ func Write(f FileInfo, data []StructInfo, oneFile bool) {
 
 		}
 		writeToFile(f.FileName, s.String())
-	} else {
-		for _, v := range data {
-			fileName := f.FileDir + "/" + v.Name + ".go"
-			var s strings.Builder
-			s.WriteString("package " + f.PackageName + "\n")
-			s.WriteString(v.Note)
-			s.WriteString(v.CreateSQL)
-			s.WriteString(v.StructContent)
-			s.WriteString("\n\n")
-			writeToFile(fileName, s.String())
-		}
-
+		return
+	}
+	//
+	for _, v := range data {
+		fileName := f.FileDir + "/" + v.Name + ".go"
+		var s strings.Builder
+		s.WriteString("package " + f.PackageName + "\n")
+		s.WriteString(v.Note)
+		s.WriteString(v.CreateSQL)
+		s.WriteString(v.StructContent)
+		s.WriteString("\n\n")
+		writeToFile(fileName, s.String())
 	}
 }
 
@@ -127,6 +127,3 @@ func JsonTag(jsonType int, origin string) string {
 		return strings.ToLower(origin)
 	}
 }
-
-// todo
-// imports

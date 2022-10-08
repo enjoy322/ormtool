@@ -23,15 +23,16 @@ type Method interface {
 }
 
 func GenerateMySQL(c Config) {
-	log.Println("-----ormtool generating-----")
+	log.Println("-----generate start-----")
 	newService(c).Gen()
-	log.Println("-----ormtool done-----")
+	log.Println("-----generate done-----")
 }
 
 type service struct {
-	DB       *sql.DB
-	Info     []StructInfo
-	FileInfo FileInfo
+	DB   *sql.DB
+	Info []StructInfo
+	// save model file
+	FileSave FileInfo
 	dbName   string
 	Conf     Config
 }
@@ -50,9 +51,9 @@ func (s service) Gen() {
 		}
 	}(s.DB)
 
-	fileData, data := s.genStruct()
+	fileSave, data := s.genStruct()
 	// write into file
-	Write(fileData, data, s.Conf.IsGenInOneFile)
+	Write(fileSave, data, s.Conf.IsGenInOneFile)
 
 }
 
@@ -80,13 +81,14 @@ type column struct {
 }
 
 // GenStruct struct info, include: struct comment, create table sql
-func (s service) genStruct() (fileData FileInfo, data []StructInfo) {
+func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 	// save file info
-	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = DealFilePath(s.Conf.SavePath, s.dbName)
+	s.FileSave.PackageName, s.FileSave.FileDir, s.FileSave.FileName = DealFilePath(s.Conf.SavePath, s.dbName)
 
 	tables := s.listTables()
 	columns := s.listColumns()
 
+	// deal per table
 	for _, table := range tables {
 		if v, ok := columns[table.TableName]; ok {
 			table.column = v
@@ -116,9 +118,8 @@ func (s service) genStruct() (fileData FileInfo, data []StructInfo) {
 		}
 
 		s.Info = append(s.Info, info)
-
 	}
-	return s.FileInfo, s.Info
+	return s.FileSave, s.Info
 }
 
 // DealColumn judge column type and generate tag info
