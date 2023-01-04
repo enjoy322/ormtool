@@ -136,7 +136,7 @@ func (s service) genFunction(name string) string {
 type %s interface{
 Create(data *%s) error
 Get(id int) (%s,error)
-Find(condition interface{},page,limit int) ([]%s,error)
+Find(condition *gorm.DB,page,limit int) ([]%s,int64,error)
 Delete(id int) error
 DeleteUnScope(id int) error
 }
@@ -197,13 +197,18 @@ return u,nil
 	info.WriteString("\n")
 
 	find := `
-func (s %s) Find(condition interface{},page,limit int) ([]%s,error){
+func (s %s) Find(condition *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
-err:=s.db.Where(condition).Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
+err:=condition.Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
 if err != nil{
-return nil,err
+return nil,0,err
 }
-return list,nil
+var count int64
+err = condition.Count(&count).Error
+if err != nil {
+	return nil,0,err
+}
+return list,count,nil
 } 
 `
 	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name))
