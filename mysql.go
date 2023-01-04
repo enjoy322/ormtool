@@ -2,6 +2,7 @@ package ormtool
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strings"
 )
@@ -117,9 +118,121 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 			info.Note = "// " + info.Name + "\t" + table.TableComment + "\n"
 		}
 
+		if s.Conf.IsGenFunction {
+			//	simple function
+			info.Function = s.genFunction(info.Name)
+		}
+
 		s.Info = append(s.Info, info)
 	}
 	return s.FileSave, s.Info
+}
+func (s service) genFunction(name string) string {
+
+	var info strings.Builder
+	info.WriteString("// function\n")
+	interfaceName := name + "ModelInterface"
+	interfaceContent := `
+type %s interface{
+Create(data *%s) error
+Get(id int) (%s,error)
+Find(condition interface{},page,limit int) ([]%s,error)
+Delete(id int) error
+DeleteUnScope(id int) error
+}
+`
+	info.WriteString(fmt.Sprintf(interfaceContent, interfaceName, name, name, name))
+	info.WriteString("\n")
+	// 2
+
+	modelServiceName := strings.ToLower(name[0:1]) + name[1:] + "ModelService"
+	modelService := `
+type %s struct{
+db *gorm.DB
+}
+`
+	info.WriteString(fmt.Sprintf(modelService, modelServiceName))
+	info.WriteString("\n")
+	newModelService := `
+func New%sModelService(db *gorm.DB) %s {
+return %s{db:db}
+}
+`
+	info.WriteString(fmt.Sprintf(newModelService, name, interfaceName, modelServiceName))
+	info.WriteString("\n")
+
+	// 3
+	create := `
+func (s %s) Create(data *%s) error{
+err:=s.db.Create(data).Error
+if err != nil{
+return err
+}
+return nil
+} 
+`
+	info.WriteString(fmt.Sprintf(create, modelServiceName, name))
+	info.WriteString("\n")
+
+	//func (s userModelService) Get(id int) (User, error) {
+	//	var u User
+	//	err := s.db.Where(id).Find(&u).Limit(1).Error
+	//	if err != nil {
+	//		return User{}, err
+	//	}
+	//	return u, nil
+	//}
+
+	get := `
+func (s %s) Get(id int) (%s,error){
+var u %s
+err:=s.db.Where(id).Find(&u).Limit(1).Error
+if err != nil{
+return %s{},err
+}
+return u,nil
+} 
+`
+	info.WriteString(fmt.Sprintf(get, modelServiceName, name, name, name))
+	info.WriteString("\n")
+
+	find := `
+func (s %s) Find(condition interface{},page,limit int) ([]%s,error){
+var list []%s
+err:=s.db.Where(condition).Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
+if err != nil{
+return nil,err
+}
+return list,nil
+} 
+`
+	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name))
+	info.WriteString("\n")
+
+	del := `
+func (s %s) Delete(id int)  error {
+err:=s.db.Delete(id).Error
+if err != nil{
+return  err
+}
+return  nil
+} 
+`
+	info.WriteString(fmt.Sprintf(del, modelServiceName))
+	info.WriteString("\n")
+
+	delUnScope := `
+func (s %s) DeleteUnScope(id int)  error {
+err:=s.db.Unscoped().Delete(id).Error
+if err != nil{
+return  err
+}
+return  nil
+} 
+`
+	info.WriteString(fmt.Sprintf(delUnScope, modelServiceName))
+	info.WriteString("\n")
+	return info.String()
 }
 
 // DealColumn judge column type and generate tag info

@@ -31,6 +31,8 @@ GenerateMySQL(
         JsonTagType: 3,
         // sql of creating table in database
         IsGenCreateSQL: true,
+        // simple crud function
+        IsGenFunction:true,
         // custom type relationships will be preferred
         // the key is the database type, the value is the golang type
         CustomType: map[string]string{
@@ -40,6 +42,55 @@ GenerateMySQL(
         "json":         "json.RawMessage",
         },
 	})
+
+
+// result example
+// User	用户表
+type User struct {
+    Id         int    `json:"id"`
+    CreateTime int    `json:"create_time"` // 创建时间
+    UserName   string `json:"user_name"`   // 用户名
+}
+
+func (*User) TableName() string {
+    return "user"
+}
+
+var UserCol = struct {
+    Id         string
+    CreateTime string
+    UserName   string
+}{
+    Id:         "id",
+    CreateTime: "create_time",
+    UserName:   "user_name",
+}
+
+// function
+
+type UserModelInterface interface {
+    Create(data *User) error
+    Get(id int) (User, error)
+    Find(condition interface{}, page, limit int) ([]User, error)
+    Delete(id int) error
+    DeleteUnScope(id int) error
+}
+
+type userModelService struct {
+    db *gorm.DB
+}
+
+func NewUserModelService(db *gorm.DB) UserModelInterface {
+    return userModelService{db: db}
+}
+
+func (s userModelService) Create(data *User) error {
+    err := s.db.Create(data).Error
+    if err != nil {
+        return err
+    }
+    return nil
+}
 ```
 #### Reference
 > https://github.com/gohouse/converter

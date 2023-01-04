@@ -64,7 +64,8 @@ func Write(f FileInfo, data []StructInfo, oneFile bool) {
 			s.WriteString(v.CreateSQL)
 			s.WriteString(v.StructContent)
 			s.WriteString("\n\n")
-
+			s.WriteString(v.Function)
+			s.WriteString("\n\n")
 		}
 		writeToFile(f.FileName, s.String())
 		return
@@ -77,6 +78,8 @@ func Write(f FileInfo, data []StructInfo, oneFile bool) {
 		s.WriteString(v.Note)
 		s.WriteString(v.CreateSQL)
 		s.WriteString(v.StructContent)
+		s.WriteString("\n\n")
+		s.WriteString(v.Function)
 		s.WriteString("\n\n")
 		writeToFile(fileName, s.String())
 	}
@@ -100,7 +103,7 @@ func writeToFile(fileName, content string) {
 	goFormat(fileName)
 }
 
-//format go file
+// format go file
 func goFormat(fileName string) {
 	cmd := exec.Command("gofmt", "-w", fileName)
 	err := cmd.Run()

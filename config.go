@@ -20,6 +20,8 @@ type Config struct {
 	JsonTagType int
 	// sql of creating table in database
 	IsGenCreateSQL bool
+	// simple crud function
+	IsGenFunction bool
 	// custom type relationships will be preferred
 	// the key is the database type, the value is the golang type
 	CustomType map[string]string
@@ -31,6 +33,7 @@ type StructInfo struct {
 	Note          string // description
 	CreateSQL     string // create table sql
 	StructContent string
+	Function      string // simple crud function
 }
 
 type FileInfo struct {
