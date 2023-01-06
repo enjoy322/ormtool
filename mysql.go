@@ -134,11 +134,11 @@ func (s service) genFunction(name string) string {
 	interfaceName := name + "ModelInterface"
 	interfaceContent := `
 type %s interface{
-Create(data *%s) error
-Get(id int) (%s,error)
-Find(condition *gorm.DB,page,limit int) ([]%s,int64,error)
-Delete(id int) error
-DeleteUnScope(id int) error
+Create(tx *gorm.DB,data *%s) error
+Get(tx *gorm.DB,id int) (%s,error)
+Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
+DeleteByID(tx *gorm.DB,id int) error
+DeleteCustom(tx *gorm.DB) error
 }
 `
 	info.WriteString(fmt.Sprintf(interfaceContent, interfaceName, name, name, name))
@@ -148,14 +148,13 @@ DeleteUnScope(id int) error
 	modelServiceName := strings.ToLower(name[0:1]) + name[1:] + "ModelService"
 	modelService := `
 type %s struct{
-db *gorm.DB
 }
 `
 	info.WriteString(fmt.Sprintf(modelService, modelServiceName))
 	info.WriteString("\n")
 	newModelService := `
-func New%sModelService(db *gorm.DB) %s {
-return %s{db:db}
+func New%sModelService() %s {
+return %s{}
 }
 `
 	info.WriteString(fmt.Sprintf(newModelService, name, interfaceName, modelServiceName))
@@ -163,8 +162,8 @@ return %s{db:db}
 
 	// 3
 	create := `
-func (s %s) Create(data *%s) error{
-err:=s.db.Create(data).Error
+func (s %s) Create(tx *gorm.DB,data *%s) error{
+err:=tx.Create(data).Error
 if err != nil{
 return err
 }
@@ -184,9 +183,9 @@ return nil
 	//}
 
 	get := `
-func (s %s) Get(id int) (%s,error){
+func (s %s) Get(tx *gorm.DB,id int) (%s,error){
 var u %s
-err:=s.db.Where(id).Find(&u).Limit(1).Error
+err:=tx.Where(id).First(&u).Error
 if err != nil{
 return %s{},err
 }
@@ -197,14 +196,14 @@ return u,nil
 	info.WriteString("\n")
 
 	find := `
-func (s %s) Find(condition *gorm.DB,page,limit int) ([]%s,int64,error){
+func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
-err:=condition.Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
+err:=tx.Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
 if err != nil{
 return nil,0,err
 }
 var count int64
-err = condition.Count(&count).Error
+err = tx.Count(&count).Error
 if err != nil {
 	return nil,0,err
 }
@@ -215,27 +214,27 @@ return list,count,nil
 	info.WriteString("\n")
 
 	del := `
-func (s %s) Delete(id int)  error {
-err:=s.db.Delete(id).Error
+func (s %s) DeleteByID(tx *gorm.DB,id int)  error {
+err:=tx.where(id).Delete(&%s{}).Error
 if err != nil{
 return  err
 }
 return  nil
 } 
 `
-	info.WriteString(fmt.Sprintf(del, modelServiceName))
+	info.WriteString(fmt.Sprintf(del, modelServiceName, name))
 	info.WriteString("\n")
 
 	delUnScope := `
-func (s %s) DeleteUnScope(id int)  error {
-err:=s.db.Unscoped().Delete(id).Error
+func (s %s) DeleteCustom(tx *gorm.DB)  error {
+err:=tx.Delete(&%s{}).Error
 if err != nil{
 return  err
 }
 return  nil
 } 
 `
-	info.WriteString(fmt.Sprintf(delUnScope, modelServiceName))
+	info.WriteString(fmt.Sprintf(delUnScope, modelServiceName, name))
 	info.WriteString("\n")
 	return info.String()
 }
