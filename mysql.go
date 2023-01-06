@@ -215,7 +215,7 @@ return list,count,nil
 
 	del := `
 func (s %s) DeleteByID(tx *gorm.DB,id int)  error {
-err:=tx.where(id).Delete(&%s{}).Error
+err:=tx.Where(id).Delete(&%s{}).Error
 if err != nil{
 return  err
 }
