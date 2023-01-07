@@ -22,12 +22,15 @@ type Config struct {
 	IsGenCreateSQL bool
 	// simple crud function
 	IsGenFunction bool
+	// cache simple model info to redis, Ps. IsGenCreateSQL = true
+	IsGenFunctionWithCache bool
 	// custom type relationships will be preferred
 	// the key is the database type, the value is the golang type
 	CustomType map[string]string
 }
 
 type StructInfo struct {
+	ImportInfo    []string
 	Name          string
 	TableName     string
 	Note          string // description

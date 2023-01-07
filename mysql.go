@@ -120,13 +120,21 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 
 		if s.Conf.IsGenFunction {
 			//	simple function
-			info.Function = s.genFunction(info.Name)
+			if s.Conf.IsGenFunctionWithCache {
+				info.ImportInfo = []string{"context", "encoding/json", "strconv", "github.com/go-redis/redis/v8",
+					"gorm.io/gorm", "time"}
+				info.Function = s.genFunctionWithCache(info.Name)
+			} else {
+				info.ImportInfo = []string{"context", "gorm.io/gorm"}
+				info.Function = s.genFunction(info.Name)
+			}
 		}
 
 		s.Info = append(s.Info, info)
 	}
 	return s.FileSave, s.Info
 }
+
 func (s service) genFunction(name string) string {
 
 	var info strings.Builder
@@ -138,7 +146,6 @@ Create(tx *gorm.DB,data *%s) error
 Get(tx *gorm.DB,id int) (%s,error)
 Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
 DeleteByID(tx *gorm.DB,id int) error
-DeleteCustom(tx *gorm.DB) error
 }
 `
 	info.WriteString(fmt.Sprintf(interfaceContent, interfaceName, name, name, name))
@@ -184,12 +191,12 @@ return nil
 
 	get := `
 func (s %s) Get(tx *gorm.DB,id int) (%s,error){
-var u %s
-err:=tx.Where(id).First(&u).Error
-if err != nil{
+var data %s
+err:=tx.Where(id).First(&data).Error
+if err != nil && err==gorm.ErrRecordNotFound {
 return %s{},err
 }
-return u,nil
+return data,nil
 } 
 `
 	info.WriteString(fmt.Sprintf(get, modelServiceName, name, name, name))
@@ -225,17 +232,144 @@ return  nil
 	info.WriteString(fmt.Sprintf(del, modelServiceName, name))
 	info.WriteString("\n")
 
-	delUnScope := `
-func (s %s) DeleteCustom(tx *gorm.DB)  error {
-err:=tx.Delete(&%s{}).Error
+	return info.String()
+}
+
+func (s service) genFunctionWithCache(name string) string {
+	var info strings.Builder
+	camelName := strings.ToLower(name[0:1]) + name[1:]
+	info.WriteString("// function\n")
+	cacheName := fmt.Sprintf("%sCache", camelName)
+	invalidCacheName := fmt.Sprintf("%sInvalidCache", camelName)
+	info.WriteString(fmt.Sprintf("var %s=\"cache%s:\"\n", cacheName, name))
+	info.WriteString(fmt.Sprintf("var %s=\"invalidCache%s:\"\n", invalidCacheName, name))
+
+	interfaceName := name + "ModelInterface"
+	interfaceContent := `
+type %s interface{
+Create(tx *gorm.DB,data *%s) error
+Get(tx *gorm.DB,id int) (%s,error)
+Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
+DeleteByID(tx *gorm.DB,id int) error
+}
+`
+	info.WriteString(fmt.Sprintf(interfaceContent, interfaceName, name, name, name))
+	info.WriteString("\n")
+	// 2
+
+	modelServiceName := camelName + "ModelService"
+	modelService := `
+type %s struct{
+rdb *redis.Client
+}
+`
+	info.WriteString(fmt.Sprintf(modelService, modelServiceName))
+	info.WriteString("\n")
+	newModelService := `
+func New%sModelService(redisDB *redis.Client) %s {
+return %s{rdb:redisDB}
+}
+`
+	info.WriteString(fmt.Sprintf(newModelService, name, interfaceName, modelServiceName))
+	info.WriteString("\n")
+
+	// 3
+	create := `
+func (s %s) Create(tx *gorm.DB,data *%s) error{
+err:=tx.Create(data).Error
+if err != nil{
+return err
+}
+marshal, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+s.rdb.Set(context.Background(),%s+strconv.Itoa(data.Id),string(marshal),time.Hour*48)
+return nil
+} 
+`
+	info.WriteString(fmt.Sprintf(create, modelServiceName, name, cacheName))
+	info.WriteString("\n")
+
+	//func (s userModelService) Get(id int) (User, error) {
+	//	var u User
+	//	err := s.db.Where(id).Find(&u).Limit(1).Error
+	//	if err != nil {
+	//		return User{}, err
+	//	}
+	//	return u, nil
+	//}
+
+	get := `
+func (s %s) Get(tx *gorm.DB,id int) (%s,error){
+invalidKey := %s + strconv.Itoa(id)
+if s.rdb.Exists(context.Background(), invalidKey).Val() > 0 {	
+	return %s{}, nil
+}
+var data %s
+key := %s + strconv.Itoa(id)
+if s.rdb.Exists(context.Background(), key).Val() > 0 {
+	bytes, err := s.rdb.Get(context.Background(), key).Bytes()
+	if err != nil {
+		return %s{}, err
+	}
+	err = json.Unmarshal(bytes, &data)
+	if err != nil {
+		return %s{}, err
+	}
+	return data, nil
+}
+err:=tx.Where(id).First(&data).Error
+if err != nil  && err==gorm.ErrRecordNotFound{
+return %s{},err
+}
+if err != gorm.ErrRecordNotFound {
+	//	exist
+	marshal, err := json.Marshal(data)
+	if err != nil {
+		return data,err
+	}
+	s.rdb.Set(context.Background(),%s+strconv.Itoa(data.Id),string(marshal),time.Hour*48)
+	return data,nil
+}
+s.rdb.Set(context.Background(),invalidKey,"",time.Minute*2)
+return data,nil
+} 
+`
+	info.WriteString(fmt.Sprintf(get, modelServiceName, name, invalidCacheName, name, name, cacheName, name, name, name, cacheName))
+	info.WriteString("\n")
+
+	find := `
+func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
+var list []%s
+err:=tx.Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
+if err != nil{
+return nil,0,err
+}
+var count int64
+err = tx.Count(&count).Error
+if err != nil {
+	return nil,0,err
+}
+return list,count,nil
+} 
+`
+	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name))
+	info.WriteString("\n")
+
+	del := `
+func (s %s) DeleteByID(tx *gorm.DB,id int)  error {
+err:=tx.Where(id).Delete(&%s{}).Error
 if err != nil{
 return  err
 }
+s.rdb.Del(context.Background(),%s+strconv.Itoa(id))
 return  nil
 } 
 `
-	info.WriteString(fmt.Sprintf(delUnScope, modelServiceName, name))
+	info.WriteString(fmt.Sprintf(del, modelServiceName, name, cacheName))
 	info.WriteString("\n")
+
 	return info.String()
 }
 
