@@ -320,8 +320,11 @@ if s.rdb.Exists(context.Background(), key).Val() > 0 {
 	return data, nil
 }
 err:=tx.Where(id).First(&data).Error
-if err != nil  && err==gorm.ErrRecordNotFound{
+if err != nil  && err!=gorm.ErrRecordNotFound{
 return %s{},err
+}
+if err==gorm.ErrRecordNotFound{
+return %s{},nil
 }
 if err != gorm.ErrRecordNotFound {
 	//	exist
@@ -336,7 +339,7 @@ s.rdb.Set(context.Background(),invalidKey,"",time.Minute*2)
 return data,nil
 } 
 `
-	info.WriteString(fmt.Sprintf(get, modelServiceName, name, invalidCacheName, name, name, cacheName, name, name, name, cacheName))
+	info.WriteString(fmt.Sprintf(get, modelServiceName, name, invalidCacheName, name, name, cacheName, name, name, name, name, cacheName))
 	info.WriteString("\n")
 
 	find := `
