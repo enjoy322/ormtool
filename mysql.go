@@ -345,15 +345,16 @@ return data,nil
 	find := `
 func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
-err:=tx.Offset(limit * (page - 1)).Limit(limit).Find(&list).Error
-if err != nil{
-return nil,0,err
-}
 var count int64
-err = tx.Count(&count).Error
+err := tx.Count(&count).Error
 if err != nil {
 	return nil,0,err
 }
+err=tx.Offset(limit * (page - 1)).Limit(limit).Find(&list).Error
+if err != nil{
+return nil,0,err
+}
+
 return list,count,nil
 } 
 `
