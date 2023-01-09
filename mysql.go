@@ -205,7 +205,7 @@ return data,nil
 	find := `
 func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
-err:=tx.Find(&list).Offset(limit * (page - 1)).Limit(limit).Error
+err:=tx.Offset(limit * (page - 1)).Limit(limit).Find(&list).Error
 if err != nil{
 return nil,0,err
 }
@@ -251,6 +251,7 @@ Create(tx *gorm.DB,data *%s) error
 Get(tx *gorm.DB,id int) (%s,error)
 Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
 DeleteByID(tx *gorm.DB,id int) error
+DeleteCache(id int)
 }
 `
 	info.WriteString(fmt.Sprintf(interfaceContent, interfaceName, name, name, name))
@@ -372,6 +373,14 @@ return  nil
 } 
 `
 	info.WriteString(fmt.Sprintf(del, modelServiceName, name, cacheName))
+	info.WriteString("\n")
+
+	delCache := `
+func (s %s) DeleteCache(id int){
+s.rdb.Del(context.Background(),%s+strconv.Itoa(id))
+}
+`
+	info.WriteString(fmt.Sprintf(delCache, modelServiceName, cacheName))
 	info.WriteString("\n")
 
 	return info.String()
