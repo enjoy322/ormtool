@@ -517,7 +517,7 @@ func (s service) listColumns() map[string][]column {
 	tables := make(map[string][]column)
 	sqlStr := `SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME,
        COLUMN_COMMENT
-   FROM information_schema.COLUMNS WHERE table_schema = ? order by TABLE_NAME`
+   FROM information_schema.COLUMNS WHERE table_schema = ? order by ORDINAL_POSITION`
 	rows, err := s.DB.Query(sqlStr, s.dbName)
 
 	if err != nil {
