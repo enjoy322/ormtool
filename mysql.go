@@ -77,7 +77,7 @@ type column struct {
 	ColumnComment string
 	//Length        interface{}
 	IsNullable string
-	//ColumnKey     string
+	//ColumnKey string
 	Tag string
 }
 
@@ -478,7 +478,7 @@ func (s service) dealType(c Config, typeSimple, typeDetail string) string {
 	}
 }
 
-// GetCreateSQL sql of creating table in database
+// GetCreateSQL sql of creating table in the database
 func (s service) getCreateSQL(tableName string) string {
 	sqlStr := "show create table " + tableName
 	rows, err := s.DB.Query(sqlStr)

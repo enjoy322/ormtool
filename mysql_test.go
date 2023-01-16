@@ -23,14 +23,14 @@ func TestGenerateMySQL(t *testing.T) {
 			// json tag type. The necessary conditions：IsGenJsonTag:true.
 			// 1.UserName 2.userName 3.user_name 4.user-name
 			JsonTagType: 3,
-			// sql of creating table in database
+			// sql of creating table in the database
 			IsGenCreateSQL: false,
 			// simple crud function
 			IsGenFunction: false,
 			// cache simple model info to redis, Ps. IsGenCreateSQL = true
 			IsGenFunctionWithCache: false,
-			// custom type relationships will be preferred
-			// the key is the database type, the value is the golang type
+			// custom type relationships will be preferred.
+			// the key is the database type, The value is the golang type
 			CustomType: map[string]string{
 				"int":          "int",
 				"int unsigned": "uint32",

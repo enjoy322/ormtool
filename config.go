@@ -6,7 +6,7 @@ type Config struct {
 	ConnStr string
 
 	Database string
-	// file relative path
+	// file, relative path
 	SavePath string
 	// json tag
 	IsGenJsonTag bool
@@ -18,14 +18,14 @@ type Config struct {
 	// json tag type. The necessary conditions：IsGenJsonTag:true.
 	// 1.UserName 2.userName 3.user_name 4.user-name
 	JsonTagType int
-	// sql of creating table in database
+	// sql of creating table in the database
 	IsGenCreateSQL bool
 	// simple crud function
 	IsGenFunction bool
 	// cache simple model info to redis, Ps. IsGenCreateSQL = true
 	IsGenFunctionWithCache bool
-	// custom type relationships will be preferred
-	// the key is the database type, the value is the golang type
+	// custom type relationships will be preferred.
+	// the key is the database type, The value is the golang type
 	CustomType map[string]string
 }
 
