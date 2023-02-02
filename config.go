@@ -4,7 +4,7 @@ package ormtool
 type Config struct {
 	// connect mysql, [user]:[password]@tcp([host]:[port])/[database]?parseTime=true
 	ConnStr string
-
+	// database name
 	Database string
 	// file, relative path
 	SavePath string

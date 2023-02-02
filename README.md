@@ -8,7 +8,7 @@ go get -u github.com/enjoy322/ormtool@main
 
 #### 2. Configuration
 
-Note: The database field should be underlined in lowercase
+Note: The database table column should be underlined in lowercase
 
 ```go
 GenerateMySQL(

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type Method interface {
+type serviceInterface interface {
 	genStruct() (fileData FileInfo, data []StructInfo)
 
 	listTables() []tableInfo
@@ -21,11 +21,12 @@ type Method interface {
 	dealType(c Config, typeSimple, typeDetail string) string
 
 	getCreateSQL(tableName string) string
+
+	gen()
 }
 
 func GenerateMySQL(c Config) {
-	log.Println("-----generate start-----")
-	newService(c).Gen()
+	newService(c).gen()
 	log.Println("-----generate done-----")
 }
 
@@ -38,13 +39,16 @@ type service struct {
 	Conf     Config
 }
 
-func newService(c Config) *service {
-	conn := mysqlConn(c.ConnStr)
+func newService(c Config) serviceInterface {
+	conn, err := mysqlConn(c.ConnStr)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	return &service{DB: conn, dbName: c.Database, Conf: c}
+	return service{DB: conn, dbName: c.Database, Conf: c}
 }
 
-func (s service) Gen() {
+func (s service) gen() {
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {

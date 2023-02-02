@@ -36,6 +36,6 @@ var mysqlToGo = map[string]string{
 	"float":              "float64",
 	"double":             "float64",
 	"decimal":            "float64",
-	"binary":             "string",
-	"varbinary":          "string",
+	"binary":             "[]byte",
+	"varbinary":          "[]byte",
 }

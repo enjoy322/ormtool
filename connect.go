@@ -3,19 +3,17 @@ package ormtool
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 )
 
-//mysql connect
-func mysqlConn(conn string) *sql.DB {
+// mysql connect
+func mysqlConn(conn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", conn)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	err = db.Ping()
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
-	log.Println("MySQL connected")
-	return db
+	return db, nil
 }
