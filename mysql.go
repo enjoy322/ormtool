@@ -152,6 +152,7 @@ type %s interface{
 Create(tx *gorm.DB,data *%s) error
 Get(tx *gorm.DB,id int) (%s,error)
 Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
+Update(tx *gorm.DB, update map[string]interface{}) error
 DeleteByID(tx *gorm.DB,id int) error
 }
 `
@@ -228,6 +229,18 @@ return list,count,nil
 	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name, name))
 	info.WriteString("\n")
 
+	update := `
+func (s %s) Update(tx *gorm.DB, update map[string]interface{}) error {
+err:=tx.Model(&%s{}).Updates(update).Error
+if err != nil{
+return  err
+}
+return  nil
+} 
+`
+	info.WriteString(fmt.Sprintf(update, modelServiceName, name))
+	info.WriteString("\n")
+
 	del := `
 func (s %s) DeleteByID(tx *gorm.DB,id int)  error {
 err:=tx.Where(id).Delete(&%s{}).Error
@@ -258,6 +271,7 @@ type %s interface{
 Create(tx *gorm.DB,data *%s) error
 Get(tx *gorm.DB,id int) (%s,error)
 Find(tx *gorm.DB,page,limit int) ([]%s,int64,error)
+Update(tx *gorm.DB, update map[string]interface{}) error
 DeleteByID(tx *gorm.DB,id int) error
 DeleteCache(id int)
 }
@@ -357,6 +371,18 @@ return list,count,nil
 } 
 `
 	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name, name))
+	info.WriteString("\n")
+
+	update := `
+func (s %s) Update(tx *gorm.DB, update map[string]interface{}) error {
+err:=tx.Model(&%s{}).Updates(update).Error
+if err != nil{
+return  err
+}
+return  nil
+} 
+`
+	info.WriteString(fmt.Sprintf(update, modelServiceName, name))
 	info.WriteString("\n")
 
 	del := `
