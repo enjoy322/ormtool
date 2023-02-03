@@ -26,7 +26,7 @@ func TestGenerateMySQL(t *testing.T) {
 			// sql of creating table in the database
 			IsGenCreateSQL: false,
 			// simple crud function
-			IsGenFunction: false,
+			IsGenFunction: true,
 			// cache simple model info to redis, Ps. IsGenCreateSQL = true
 			IsGenFunctionWithCache: false,
 			// custom type relationships will be preferred.

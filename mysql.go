@@ -114,7 +114,9 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 		// struct info
 		info.StructContent = s.dealStructContent(table)
 
-		info.Name = lowerCamel(table.TableName)
+		info.FileName = lowerCamel(table.TableName)
+
+		info.Name = UpperCamel(table.TableName)
 
 		// table comment
 		// add if table comment exists
@@ -129,7 +131,11 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 					"gorm.io/gorm", "time"}
 				info.Function = s.genFunctionWithCache(info.Name)
 			} else {
-				info.ImportInfo = []string{"context", "gorm.io/gorm"}
+				info.ImportInfo = []string{"gorm.io/gorm"}
+				if s.Conf.IsGenFunctionWithCache {
+					info.ImportInfo = append(info.ImportInfo, "context")
+				}
+
 				info.Function = s.genFunction(info.Name)
 			}
 		}

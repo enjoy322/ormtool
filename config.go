@@ -32,6 +32,7 @@ type Config struct {
 type StructInfo struct {
 	ImportInfo    []string
 	Name          string
+	FileName      string //model file name
 	TableName     string
 	Note          string // description
 	CreateSQL     string // create table sql
