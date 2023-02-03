@@ -24,6 +24,23 @@ func UpperCamel(s string) string {
 	return s
 }
 
+func lowerCamel(s string) string {
+	s = strings.TrimSpace(s)
+	split := strings.Split(s, "_")
+	if len(split) < 2 {
+		return s
+	}
+	var tName strings.Builder
+	tName.WriteString(strings.ToLower(split[0][:1]) + split[0][1:])
+
+	for i := 1; i < len(split); i++ {
+		str := split[i]
+		tName.WriteString(strings.ToUpper(str[:1]) + str[1:])
+	}
+	s = tName.String()
+	return s
+}
+
 // DealFilePath back save path and package name
 func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
 	if !strings.HasSuffix(s, ".go") {

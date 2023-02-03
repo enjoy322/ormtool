@@ -114,7 +114,7 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 		// struct info
 		info.StructContent = s.dealStructContent(table)
 
-		info.Name = UpperCamel(table.TableName)
+		info.Name = lowerCamel(table.TableName)
 
 		// table comment
 		// add if table comment exists
