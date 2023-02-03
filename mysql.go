@@ -132,9 +132,6 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 				info.Function = s.genFunctionWithCache(info.Name)
 			} else {
 				info.ImportInfo = []string{"gorm.io/gorm"}
-				if s.Conf.IsGenFunctionWithCache {
-					info.ImportInfo = append(info.ImportInfo, "context")
-				}
 
 				info.Function = s.genFunction(info.Name)
 			}
@@ -202,8 +199,8 @@ return nil
 	get := `
 func (s %s) Get(tx *gorm.DB,id int) (%s,error){
 var data %s
-err:=tx.Where(id).First(&data).Error
-if err != nil && err==gorm.ErrRecordNotFound {
+err:=tx.Where(id).Limit(1).Find(&data).Error
+if err != nil{
 return %s{},err
 }
 return data,nil
@@ -215,6 +212,7 @@ return data,nil
 	find := `
 func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
+tx=tx.Model(&%s{})
 err:=tx.Offset(limit * (page - 1)).Limit(limit).Find(&list).Error
 if err != nil{
 return nil,0,err
@@ -227,7 +225,7 @@ if err != nil {
 return list,count,nil
 } 
 `
-	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name))
+	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name, name))
 	info.WriteString("\n")
 
 	del := `
@@ -302,15 +300,6 @@ return nil
 	info.WriteString(fmt.Sprintf(create, modelServiceName, name, cacheName))
 	info.WriteString("\n")
 
-	//func (s userModelService) Get(id int) (User, error) {
-	//	var u User
-	//	err := s.db.Where(id).Find(&u).Limit(1).Error
-	//	if err != nil {
-	//		return User{}, err
-	//	}
-	//	return u, nil
-	//}
-
 	get := `
 func (s %s) Get(tx *gorm.DB,id int) (%s,error){
 invalidKey := %s + strconv.Itoa(id)
@@ -330,14 +319,11 @@ if s.rdb.Exists(context.Background(), key).Val() > 0 {
 	}
 	return data, nil
 }
-err:=tx.Where(id).First(&data).Error
-if err != nil  && err!=gorm.ErrRecordNotFound{
+err:=tx.Where(id).Limit(1).Find(&data).Error
+if err != nil{
 return %s{},err
 }
-if err==gorm.ErrRecordNotFound{
-return %s{},nil
-}
-if err != gorm.ErrRecordNotFound {
+if data.Id!=0 {
 	//	exist
 	marshal, err := json.Marshal(data)
 	if err != nil {
@@ -350,13 +336,14 @@ s.rdb.Set(context.Background(),invalidKey,"",time.Minute*2)
 return data,nil
 } 
 `
-	info.WriteString(fmt.Sprintf(get, modelServiceName, name, invalidCacheName, name, name, cacheName, name, name, name, name, cacheName))
+	info.WriteString(fmt.Sprintf(get, modelServiceName, name, invalidCacheName, name, name, cacheName, name, name, name, cacheName))
 	info.WriteString("\n")
 
 	find := `
 func (s %s) Find(tx *gorm.DB,page,limit int) ([]%s,int64,error){
 var list []%s
 var count int64
+tx=tx.Model(&%s{})
 err := tx.Count(&count).Error
 if err != nil {
 	return nil,0,err
@@ -369,7 +356,7 @@ return nil,0,err
 return list,count,nil
 } 
 `
-	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name))
+	info.WriteString(fmt.Sprintf(find, modelServiceName, name, name, name))
 	info.WriteString("\n")
 
 	del := `
