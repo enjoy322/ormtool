@@ -365,11 +365,11 @@ err:=tx.Where(id).Delete(&%s{}).Error
 if err != nil{
 return  err
 }
-s.rdb.Del(context.Background(),%s+strconv.Itoa(id))
+s.DeleteCache(id)
 return  nil
 } 
 `
-	info.WriteString(fmt.Sprintf(del, modelServiceName, name, cacheName))
+	info.WriteString(fmt.Sprintf(del, modelServiceName, name))
 	info.WriteString("\n")
 
 	delCache := `
