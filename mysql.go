@@ -409,7 +409,7 @@ s.rdb.Del(context.Background(),%s+strconv.Itoa(id))
 	return info.String()
 }
 
-// DealColumn judge column type and generate tag info
+// DealColumn deal column type and generate struct tag info
 func (s service) dealColumn(t *tableInfo) {
 	for i := 0; i < len(t.column); i++ {
 		var f bool
@@ -489,6 +489,7 @@ func (s service) dealStructContent(t tableInfo) string {
 	return info.String()
 }
 
+// 判断字段类型，优先使用自定义对应类型
 func (s service) dealType(c Config, typeSimple, typeDetail string) string {
 	if v, ok := c.CustomType[typeDetail]; ok {
 		return v
@@ -502,6 +503,7 @@ func (s service) dealType(c Config, typeSimple, typeDetail string) string {
 }
 
 // GetCreateSQL sql of creating table in the database
+// 表创建语句
 func (s service) getCreateSQL(tableName string) string {
 	sqlStr := "show create table " + tableName
 	rows, err := s.DB.Query(sqlStr)
