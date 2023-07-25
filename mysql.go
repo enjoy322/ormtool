@@ -63,9 +63,12 @@ func (s service) gen() {
 }
 
 type tableInfo struct {
-	TableName    string
+	// 表名
+	TableName string
+	// 表备注
 	TableComment string
-	column       []column
+	// 字段数组
+	column []column
 }
 
 type column struct {
@@ -74,14 +77,18 @@ type column struct {
 	//example: varchar
 	DataType string
 	//example: varchar(32)
+	// 字段类型
 	ColumnType string
 	//default value
-	Default       interface{}
-	TableName     string
+	// 默认值
+	Default   interface{}
+	TableName string
+	// 字段备注
 	ColumnComment string
 	//Length        interface{}
 	IsNullable string
 	//ColumnKey string
+	// 结构体tag值
 	Tag string
 }
 
@@ -90,7 +97,9 @@ func (s service) genStruct() (fileSave FileInfo, data []StructInfo) {
 	// save file info
 	s.FileSave.PackageName, s.FileSave.FileDir, s.FileSave.FileName = DealFilePath(s.Conf.SavePath, s.dbName)
 
+	// 查询所有表
 	tables := s.listTables()
+	// 查询所有字段
 	columns := s.listColumns()
 
 	// deal per table
@@ -502,6 +511,11 @@ func (s service) dealType(c Config, typeSimple, typeDetail string) string {
 	}
 }
 
+type CreateSQL struct {
+	Table string `json:"Table"`
+	SQL   string `json:"Create Table"`
+}
+
 // GetCreateSQL sql of creating table in the database
 // 表创建语句
 func (s service) getCreateSQL(tableName string) string {
@@ -517,10 +531,6 @@ func (s service) getCreateSQL(tableName string) string {
 		}
 	}(rows)
 
-	type CreateSQL struct {
-		Table string `json:"Table"`
-		SQL   string `json:"Create Table"`
-	}
 	var cSql CreateSQL
 
 	for rows.Next() {

@@ -28,7 +28,7 @@ func TestGenerateMySQL(t *testing.T) {
 			// simple crud function
 			IsGenFunction: true,
 			// cache simple model info to redis, Ps. IsGenCreateSQL = true
-			IsGenFunctionWithCache: false,
+			IsGenFunctionWithCache: true,
 			// custom type relationships will be preferred.
 			// the key is the database type, The value is the golang type
 			CustomType: map[string]string{

@@ -30,6 +30,7 @@ type Config struct {
 }
 
 type StructInfo struct {
+	// package信息
 	ImportInfo    []string
 	Name          string
 	FileName      string //model file name
