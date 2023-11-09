@@ -23,7 +23,7 @@ type Method interface {
 
 	getCreateSQL(tableName string) string
 }
-type service struct {
+type Service struct {
 	DB       *sql.DB
 	Info     []base.StructInfo
 	FileInfo base.FileInfo
@@ -31,13 +31,13 @@ type service struct {
 	Conf     base.Config
 }
 
-func NewService(c base.Config) *service {
+func NewService(c base.Config) *Service {
 	conn := dbConn(c.ConnStr)
 
-	return &service{DB: conn, dbName: c.Database, Conf: c}
+	return &Service{DB: conn, dbName: c.Database, Conf: c}
 }
 
-func (s service) Gen() {
+func (s Service) Gen() {
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
@@ -75,7 +75,7 @@ type column struct {
 }
 
 // GenStruct struct info, include: struct comment, create table sql
-func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
+func (s Service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
 	// save file info
 	s.FileInfo.PackageName, s.FileInfo.FileDir, s.FileInfo.FileName = base.DealFilePath(s.Conf.SavePath, s.dbName)
 
@@ -117,7 +117,7 @@ func (s service) genStruct() (fileData base.FileInfo, data []base.StructInfo) {
 }
 
 // DealColumn judge column type and generate tag info
-func (s service) dealColumn(t *tableInfo) {
+func (s Service) dealColumn(t *tableInfo) {
 	for i := 0; i < len(t.column); i++ {
 		var f bool
 		if s.Conf.IsGenJsonTag {
@@ -155,7 +155,7 @@ func (s service) dealColumn(t *tableInfo) {
 	}
 }
 
-func (s service) dealStructContent(t tableInfo) string {
+func (s Service) dealStructContent(t tableInfo) string {
 	var info strings.Builder
 	// struct name
 	structName := base.UpperCamel(t.TableName)
@@ -196,7 +196,7 @@ func (s service) dealStructContent(t tableInfo) string {
 	return info.String()
 }
 
-func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
+func (s Service) dealType(c base.Config, typeSimple, typeDetail string) string {
 	if v, ok := c.CustomType[typeDetail]; ok {
 		return v
 	}
@@ -209,7 +209,7 @@ func (s service) dealType(c base.Config, typeSimple, typeDetail string) string {
 }
 
 // GetCreateSQL sql of creating table in database
-func (s service) getCreateSQL(tableName string) string {
+func (s Service) getCreateSQL(tableName string) string {
 	sqlStr := "show create table " + tableName
 	rows, err := s.DB.Query(sqlStr)
 	if err != nil {
@@ -243,7 +243,7 @@ func (s service) getCreateSQL(tableName string) string {
 	return info.String()
 }
 
-func (s service) listColumns() map[string][]column {
+func (s Service) listColumns() map[string][]column {
 	tables := make(map[string][]column)
 	sqlStr := `SELECT COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,COLUMN_DEFAULT,TABLE_NAME,
        COLUMN_COMMENT
@@ -272,7 +272,7 @@ func (s service) listColumns() map[string][]column {
 	return tables
 }
 
-func (s service) listTables() []tableInfo {
+func (s Service) listTables() []tableInfo {
 	sqlStr := `select Table_Name,Table_Comment from information_schema.TABLES where TABLE_SCHEMA=?`
 
 	rows, err := s.DB.Query(sqlStr, s.dbName)
