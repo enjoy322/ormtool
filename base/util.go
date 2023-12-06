@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// UpperCamel 大驼峰格式
 func UpperCamel(s string) string {
 	s = strings.TrimSpace(s)
 
@@ -23,7 +24,8 @@ func UpperCamel(s string) string {
 	return s
 }
 
-// DealFilePath back save path and package name
+// DealFilePath 处理保存文件路径
+// back save path and package name
 func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
 	if !strings.HasSuffix(s, ".go") {
 		log.Fatalln("path error! correct example: ./models/xx.go")
@@ -48,7 +50,8 @@ func DealFilePath(s string, db string) (packageName, fileDir, fileName string) {
 	return
 }
 
-// Write struct information to .go file
+// Write 写入文件
+// struct information to .go file
 func Write(f FileInfo, data []StructInfo, oneFile bool) {
 	err := os.MkdirAll(f.FileDir, 0777)
 	if err != nil {
@@ -100,7 +103,7 @@ func writeToFile(fileName, content string) {
 	goFormat(fileName)
 }
 
-//format go file
+// format go file
 func goFormat(fileName string) {
 	cmd := exec.Command("gofmt", "-w", fileName)
 	err := cmd.Run()
@@ -127,6 +130,3 @@ func JsonTag(jsonType int, origin string) string {
 		return strings.ToLower(origin)
 	}
 }
-
-// todo
-// imports
