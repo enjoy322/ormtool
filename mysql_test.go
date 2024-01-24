@@ -8,9 +8,9 @@ func TestGenerateMySQL(t *testing.T) {
 	GenerateMySQL(
 		Config{
 			//[user]:[password]@tcp([host]:[port])/[database]?parseTime=true
-			ConnStr: "root:qwe123@tcp(127.0.0.1:3306)/orm-test?parseTime=true",
+			ConnStr: "root:qwe322@tcp(127.0.0.1:3306)/clover?parseTime=true",
 			// database name
-			Database: "orm-test",
+			Database: "clover",
 			// relative path
 			SavePath: "./model/model.go",
 			// Generate one file or files
@@ -26,9 +26,9 @@ func TestGenerateMySQL(t *testing.T) {
 			// sql of creating table in the database
 			IsGenCreateSQL: false,
 			// simple crud function
-			IsGenFunction: true,
+			IsGenFunction: false,
 			// cache simple model info to redis, Ps. IsGenCreateSQL = true
-			IsGenFunctionWithCache: true,
+			IsGenFunctionWithCache: false,
 			// custom type relationships will be preferred.
 			// the key is the database type, The value is the golang type
 			CustomType: map[string]string{
