@@ -478,10 +478,13 @@ func (s service) dealStructContent(t tableInfo) string {
 		info.WriteString("\n")
 	}
 	info.WriteString("}\n\n")
-	// function for get table name in database
-	info.WriteString("func (*" + structName + ") TableName() string {\n")
-	info.WriteString("return \"" + t.TableName + "\"")
-	info.WriteString("\n}\n")
+
+	if s.Conf.IsGenTableName {
+		// function for get table name in database
+		info.WriteString("func (*" + structName + ") TableName() string {\n")
+		info.WriteString("return \"" + t.TableName + "\"")
+		info.WriteString("\n}\n")
+	}
 
 	info.WriteString("var " + structName + "Col = struct {\n")
 	for _, v := range t.column {
